@@ -1,0 +1,12 @@
+let g:netrw_dirhistmax  =10
+let g:netrw_dirhistcnt =5
+let g:netrw_dirhist_5='/home/om'
+let g:netrw_dirhist_4='/home/om/.vim'
+let g:netrw_dirhist_3='/home/puf/code/github/odicforce/wiki/src/ru'
+let g:netrw_dirhist_2='/home/puf/code/github/odicforce/wiki/src'
+let g:netrw_dirhist_1='/home/puf/code/github/odicforce/wiki'
+let g:netrw_dirhist_0='/home/puf/code/github/odicforce/wiki/src'
+let g:netrw_dirhist_9='/home/puf/code/github/odicforce/wiki/src/es'
+let g:netrw_dirhist_8='/home/puf/code/github/odicforce/wiki/src'
+let g:netrw_dirhist_7='/home/puf/code/github/odicforce/wiki/src/hi'
+let g:netrw_dirhist_6='/home/puf/code/github/odicforce/wiki/src'

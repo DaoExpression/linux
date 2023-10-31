@@ -9,5 +9,5 @@ eval $(ssh-agent)
 sleep 1 
 ssh-add ~/.ssh/github
 sleep 1
-git push git@github.com:imagineyourselfs/vim-files
+git push git@github.com:DaoExpression/vim
 clear

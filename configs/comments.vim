@@ -1,6 +1,7 @@
 "  Block Commenter Helpers
 autocmd FileType c,cpp,java,go      let b:comment_leader = '\/\/'
 autocmd FileType javascript         let b:comment_leader = '\/\/'
+autocmd FileType typescript         let b:comment_leader = '\/\/'
 autocmd FileType arduino            let b:comment_leader = '\/\/'
 autocmd FileType registry           let b:comment_leader = ';'
 autocmd FileType dosbatch           let b:comment_leader = '::'

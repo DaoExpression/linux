@@ -36,7 +36,7 @@ set synmaxcol=300 " Don't try to highlight long lines
 set iskeyword+=\- " Complete words containing a dash
 set title
 set shortmess+=c
-set titleold="Terminal"
+" set titleold="Terminal"
 " Speed up the redraw
 au CursorHold * let &ro = &ro
 " Open all cmd args in new tabs
@@ -45,12 +45,7 @@ execute ":silent tab all"
 " Load Plugins using plug
 source ~/.vim/plugins/loadPlugins.vim
 " Plugins configs
-source ~/.vim/plugins/coc.vim
 source ~/.vim/plugins/wiki.vim
-source ~/.vim/plugins/bookmarks.vim
-source ~/.vim/plugins/theme.vim
-"source ~/.vim/plugins/fzf.vim
-"source ~/.vim/plugins/pad.vim
 " Vim configs
 source ~/.vim/configs/functions.vim
 source ~/.vim/configs/syntaxColors.vim
@@ -63,25 +58,6 @@ source ~/.vim/configs/comments.vim
 source ~/.vim/configs/explorer.vim
 source ~/.vim/configs/lag.vim
 
-augroup toggleCocExtensions
-    autocmd!
-    autocmd BufEnter *.md call CocActionAsync('deactivateExtension', 'coc-tag')
-    autocmd BufLeave *.md call CocActionAsync('activeExtension', 'coc-tag')
-augroup END
-
-autocmd VimEnter * exe "CocDisable"
-autocmd VimEnter *.html exe "CocEnable" 
-autocmd VimEnter *.css exe "CocEnable" 
-autocmd VimEnter *.js exe "CocEnable" 
-
-
-let g:coc_start_at_startup=0
-nmap <leader>cc :<C-u>CocStart<CR>
-let g:coc_global_extensions = [
-    \ 'coc-vimlsp'
-    \ ]
-
-if has('vim')
-  call coc#rpc#stop()
-endif
+let g:session_autosave = 'no'
+let g:session_autoload = 'no'
 

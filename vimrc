@@ -42,10 +42,11 @@ au CursorHold * let &ro = &ro
 " Open all cmd args in new tabs
 execute ":silent tab all"
 
-" Load Plugins using plug
+" Load Plugins 
 source ~/.vim/plugins/loadPlugins.vim
 " Plugins configs
 source ~/.vim/plugins/wiki.vim
+source ~/.vim/plugins/multiVisual.vim
 " Vim configs
 source ~/.vim/configs/functions.vim
 source ~/.vim/configs/syntaxColors.vim
@@ -57,7 +58,4 @@ source ~/.vim/configs/shortcuts.vim
 source ~/.vim/configs/comments.vim
 source ~/.vim/configs/explorer.vim
 source ~/.vim/configs/lag.vim
-
-let g:session_autosave = 'no'
-let g:session_autoload = 'no'
 

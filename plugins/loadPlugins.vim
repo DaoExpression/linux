@@ -11,4 +11,24 @@ call plug#begin()
   Plug 'itchyny/calendar.vim'
   " Wiki for vim
   Plug 'lervag/wiki.vim'
+  " Use release branch (recommended)
+  Plug 'neoclide/coc.nvim', {'branch': 'release'}
+  "  One Dark Theme 
+  Plug 'joshdick/onedark.vim'
+  " Tag bar 
+  Plug 'preservim/tagbar'
+  " Android IDE 
+  " Plug 'hsanson/vim-android'
+  " Git + Tig 
+  " Plug 'tpope/vim-fugitive'
+  " Plug 'rbong/vim-flog'
+  " File Picker
+  Plug 'srstevenson/vim-picker'
+  " suround
+  Plug 'yaocccc/vim-surround'
+  " Vista Tags 
+  Plug 'liuchengxu/vista.vim'
+  " FZF - Find and edit
+  " Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+  " Plug 'yuki-yano/fzf-preview.vim', { 'branch': 'release/rpc' }
 call plug#end()

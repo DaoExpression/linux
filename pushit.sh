@@ -10,4 +10,3 @@ sleep 1
 ssh-add ~/.ssh/github
 sleep 1
 git push git@github.com:DaoExpression/vim
-clear

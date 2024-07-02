@@ -47,6 +47,8 @@ source ~/.vim/plugins/loadPlugins.vim
 " Plugins configs
 source ~/.vim/plugins/wiki.vim
 source ~/.vim/plugins/multiVisual.vim
+source ~/.vim/plugins/coc.vim
+source ~/.vim/plugins/oneDark.vim
 " Vim configs
 source ~/.vim/configs/functions.vim
 source ~/.vim/configs/syntaxColors.vim
@@ -58,4 +60,8 @@ source ~/.vim/configs/shortcuts.vim
 source ~/.vim/configs/comments.vim
 source ~/.vim/configs/explorer.vim
 source ~/.vim/configs/lag.vim
+source ~/.vim/configs/coc.vim
+source ~/.vim/configs/vista.vim
+source ~/.vim/configs/fzf.vim
+source ~/.vim/configs/smartf.vim
 

@@ -1,0 +1,36 @@
+[user]
+  email = om@localhost
+  name = om
+[core]
+  editor = vim
+  whitespace = fix,-indent-with-non-tab,trailing-space,cr-at-eol
+  pager = less
+[fetch]
+  prune = true
+[status]
+  short = true 
+[color]
+  ui = auto
+[color "branch"]
+  current = yellow bold
+  local = green bold 
+  remote = cyan bold 
+[color "diff"]
+  meta = yellow bold 
+  frag = magenta bold 
+  new = green bold 
+  whitespace = red reverse
+[color "status"]
+  added = green bold
+  changed = yellow bold 
+  untracked = red bold 
+[diff] 
+  tool = vimdiff
+[difftool]
+  prompt = false
+[credential "https://github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential

@@ -1,8 +1,0 @@
-{
-  "coc.preferences.formatOnSave": true,
-  "snippets.ultisnips.pythonPrompt": false,
-  "tsserver.enable": false,
-  "prettier.requireConfig": true,
-  "eslint.enable": true,
-  "eslint.autoFixOnSave": true
-}

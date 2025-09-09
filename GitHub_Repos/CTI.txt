@@ -111,3 +111,5 @@ git clone https://github.com/fastfire/deepdarkCTI/
 git clone https://github.com/mitre/cti
 git clone https://github.com/OpenCTI-Platform/opencti
 git clone https://github.com/hslatman/awesome-threat-intelligence
+git clone https://github.com/publicsuffix/list
+

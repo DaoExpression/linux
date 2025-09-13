@@ -1,0 +1,33 @@
+# Welcome to the GreatSky.ddns.net :) 
+
+This server uses Apache2 with Valid SSL certificates using Letsencrypt. 
+
+MongoDB is already installed and running, as Apache2. 
+
+---
+
+Your user have access to 'sudo', therefor you can be root too. 
+
+Tmux uses 'ctrl+a' to change tmux behavior. 
+
+vim is using my own configurations 
+
+NodeJS is installed within this user only. 
+
+If you wish to create a dedicated user to host this application, please install using nvm.org 
+
+We don't want root using to be able to use NodeJS, but only 'www-data' group. 
+
+I think you can add this folders from this user, to a virtual-path in Apache2. 
+
+If you need something, please write a message like this one, and leave it in 'om' user folder. 
+
+cloudflared application is already installed. 
+
+acme.sh application is installed in user folder too. 
+
+you have cloudflare folder with some things that can help. 
+
+Maybe I need to change my domain to cloudflare, before being possible to create a tunnel. 
+
+Therefor, You focus only in greatsky.ddns.net/app ( read more in APP_ messa ) 

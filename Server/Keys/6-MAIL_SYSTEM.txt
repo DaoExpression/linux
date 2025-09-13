@@ -1,0 +1,5 @@
+This system is using Postfix. We can exchange messages by using the 'mail' package. 
+
+use 'mail' to read your new emails. 
+
+Send email to user "om". 

@@ -1,0 +1,14 @@
+Hi, 
+
+This system use iptables. Script is located in /root/IPTables/iptables
+Configuration saved : /etc/initd/netfilters-persistent save 
+
+This system  use Crowdsec to monitor HTTP requests
+
+The system use fail2ban to block +3 failed attempts.
+
+This system use ossec-hids to file integrity and other issues like rootkits. 
+
+Please configure your SSH connection by adding your personal SSH-key to the known_hosts
+
+Read more ./ConfigureYourLoginMethod.sh and follow the suggestions. 

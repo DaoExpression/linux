@@ -1,0 +1,7 @@
+Hi,
+
+I add a 1TB disk to /opt/ 
+
+I change configuration of MongoDB to store MongoDBs and Logs in /opt/mongodb/
+
+Thanks! 

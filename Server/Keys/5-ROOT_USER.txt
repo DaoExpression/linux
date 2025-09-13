@@ -1,0 +1,13 @@
+root user have tmux session open to monitor server activity. 
+
+explore without closing each tab / window 
+
+ctrl+a keys (move around inside each tab) 
+ctrl+a 1 (select tab number)
+ctrl+a c (create new tab)
+ctrl+a " (split horizontal)
+ctrl+a % (split vertical) 
+ctrl+a n (next tab)
+ctrl+a p (previews tab)
+
+# Note: Your user use the same configuration for tmux

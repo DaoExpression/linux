@@ -1,0 +1,1802 @@
+Sorting...
+Full Text Search...
+activemq/noble 5.17.6+dfsg-1 all
+  Java message broker - server
+
+alpine/noble 2.26+dfsg-1build3 amd64
+  Text-based email client, friendly for novices but powerful
+
+alpine-doc/noble 2.26+dfsg-1build3 all
+  Text-based email client's documentation
+
+anonip/noble 1.1.0-2 all
+  Anonymize IP-addresses in log-files
+
+ant/noble 1.10.14-1 all
+  Java based build tool like make
+
+ant-contrib/noble 1.0~b3+svn177-12 all
+  collection of tasks, types and other tools for Apache Ant
+
+ant-doc/noble 1.10.14-1 all
+  Java based build tool like make - API documentation and manual
+
+ant-optional/noble 1.10.14-1 all
+  Java based build tool like make - optional libraries
+
+apache2/noble-updates,noble-security,now 2.4.58-1ubuntu8.8 amd64 [installed]
+  Apache HTTP Server
+
+apache2-bin/noble-updates,noble-security,now 2.4.58-1ubuntu8.8 amd64 [installed,automatic]
+  Apache HTTP Server (modules and other binary files)
+
+apache2-data/noble-updates,noble-security,now 2.4.58-1ubuntu8.8 all [installed,automatic]
+  Apache HTTP Server (common files)
+
+apache2-dev/noble-updates,noble-security 2.4.58-1ubuntu8.8 amd64
+  Apache HTTP Server (development headers)
+
+apache2-doc/noble-updates,noble-security 2.4.58-1ubuntu8.8 all
+  Apache HTTP Server (on-site documentation)
+
+apache2-ssl-dev/noble-updates,noble-security 2.4.58-1ubuntu8.8 amd64
+  Apache HTTP Server (mod_ssl development headers)
+
+apache2-suexec-custom/noble-updates,noble-security 2.4.58-1ubuntu8.8 amd64
+  Apache HTTP Server configurable suexec program for mod_suexec
+
+apache2-suexec-pristine/noble-updates,noble-security 2.4.58-1ubuntu8.8 amd64
+  Apache HTTP Server standard suexec program for mod_suexec
+
+apache2-utils/noble-updates,noble-security,now 2.4.58-1ubuntu8.8 amd64 [installed,automatic]
+  Apache HTTP Server (utility programs for web servers)
+
+apacheds/noble 2.0.0~M26-4 all
+  Apache Directory Server
+
+apachetop/noble 0.23.2-2build3 amd64
+  Realtime Apache monitoring tool
+
+asp.net-examples/noble 4.2-2.5 all
+  demo pages for ASP.NET infrastructure
+
+asql/noble 1.6-1.2 all
+  Run SQL queries against apache logs
+
+avro-bin/noble 1.11.1-1build1 amd64
+  Apache Avro C utilities (avro-c)
+
+burrow/noble 1.2.1-2ubuntu2 amd64
+  Apache Kafka consumer lag checking
+
+centreon-plugins/noble 0.0~20230118-1 all
+  Collection of Nagios plugins to monitor OS, services and network devices
+
+chasquid/noble-updates,noble-security 1.13-1ubuntu0.3 amd64
+  simple SMTP (email) server written in go
+
+cl-modlisp/noble 0.6-7.2 all
+  Common Lisp interface to the Apache mod-lisp module
+
+collectd-core/noble 5.12.0-17.1build2 amd64
+  statistics collection and monitoring daemon (core system)
+
+cortado/noble 0.6.0-5 all
+  streaming applet for Ogg formats
+
+cronolog/noble 1.6.2+rpk-4 amd64
+  Logfile rotator for web servers
+
+cs/noble 3.2.0-1 all
+  simple, yet powerful CloudStack API client
+
+dehydrated-apache2/noble 0.7.0-3 all
+  dehydrated challenge response support for Apache2
+
+derby-doc/noble 10.14.2.0-3 all
+  Apache Derby API documentation and examples
+
+derby-tools/noble 10.14.2.0-3 all
+  Apache Derby Tools
+
+dwww/noble 1.16 amd64
+  Read all on-line documentation with a WWW browser
+
+elpa-apache-mode/noble 2.2.0-4 all
+  Emacs major mode for editing Apache configuration files
+
+emboss-explorer/noble 2.2.0-12 all
+  web-based GUI to EMBOSS
+
+erlang-p1-xmpp/noble 1.7.0-1 amd64
+  Erlang/Elixir XMPP parsing and serialization library
+
+fail2ban/noble-updates 1.0.2-3ubuntu0.1 all
+  ban hosts that cause multiple authentication errors
+
+gitweb/noble-updates,noble-security 1:2.43.0-1ubuntu7.3 all
+  fast, scalable, distributed revision control system (web interface)
+
+goaccess/noble 1:1.8.1-1build3 amd64
+  log analyzer and interactive viewer for the Apache Webserver
+
+golang-github-confluentinc-confluent-kafka-go-dev/noble 0.11.6-1 all
+  Apache Kafka Golang client by Confluent
+
+golang-github-eapache-go-xerial-snappy-dev/noble 0.0~git20180814.776d571-1 all
+  Xerial-compatible Snappy framing support for Go
+
+golang-github-gorilla-handlers-dev/noble 1.5.2-1 all
+  collection of useful handlers for Go's net/http package
+
+golang-github-masahiro331-go-mvn-version-dev/noble 0.0~git20210429.d3157d6-2 all
+  Go library for parsing maven(java) package versions
+
+golang-github-masterminds-goutils-dev/noble 1.1.1-4 all
+  Go implementation of some string manipulation libraries of Apache Commons
+
+golang-github-mesos-mesos-go-dev/noble 0.0.6+dfsg-2 all
+  Go language bindings for Apache Mesos
+
+golang-github-optiopay-kafka-dev/noble 2.1.1-1 all
+  Go client library for Apache Kafka
+
+golang-github-shopify-sarama-dev/noble 1.22.1-1 all
+  Go library for Apache Kafka
+
+golang-github-xanzy-go-cloudstack-dev/noble 2.9.0-1 all
+  Golang API client to interact with Apache CloudStack
+
+golang-gopkg-eapache-channels.v1-dev/noble 1.1.0-2 all
+  collection of helpers around golang's existing channels
+
+golang-gopkg-eapache-go-resiliency.v1-dev/noble 1.2.0-1 all
+  resiliency patterns for golang
+
+golang-gopkg-eapache-queue.v1-dev/noble 1.1.0-2 all
+  fast golang queue using ring-buffer
+
+google-android-sdk-docs-installer/noble 24+r3 all
+  Android SDK Documentation from Google
+
+gridsite/noble 3.0.0~20230214gitee81151-1.1build3 amd64
+  Grid Security for the Web, Web platforms for Grids
+
+gridsite-clients/noble 3.0.0~20230214gitee81151-1.1build3 amd64
+  Clients to gridsite: htcp, htrm, htmv
+
+gridsite-doc/noble 3.0.0~20230214gitee81151-1.1build3 all
+  Developers Documentation for gridsite
+
+hashcat/noble 6.2.6+ds1-1build2 amd64
+  World's fastest and most advanced password recovery utility
+
+hey/noble-updates,noble-security 0.1.4-2ubuntu0.24.04.3 amd64
+  Sends some load to a web application
+
+http-icons/noble 0~20041010-1.1 all
+  classic MIME icons
+
+httpdirfs/noble 1.2.5-1build4 amd64
+  filesystem client for HTTP directory listings
+
+ip2host/noble 1.13-2.1 all
+  Resolve IPs to hostnames in web server logs
+
+jardiff/noble 0.2-5.1 all
+  tool to visualise API differences between two JAR files
+
+javascript-common/noble,now 11+nmu1 all [installed,automatic]
+  Base support for JavaScript library packages
+
+jdresolve/noble 0.6.1-7 all
+  fast alternative to apache logresolve
+
+jekyll/noble 4.3.2+dfsg-1 all
+  simple, blog aware, static site generator
+
+jeuclid-cli/noble 3.1.9-5 all
+  Complete MathML rendering solution (command line tools)
+
+jeuclid-mathviewer/noble 3.1.9-5 all
+  Complete MathML rendering solution (Swing MathViewer)
+
+jmeter/noble 2.13-5 all
+  Load testing and performance measurement application (main application)
+
+jmeter-apidoc/noble 2.13-5 all
+  Load testing and performance measurement application (API doc)
+
+jmeter-ftp/noble 2.13-5 all
+  Load testing and performance measurement application (ftp module)
+
+jmeter-help/noble 2.13-5 all
+  Load testing and performance measurement application (user manual)
+
+jmeter-http/noble 2.13-5 all
+  Load testing and performance measurement application (http module)
+
+jmeter-java/noble 2.13-5 all
+  Load testing and performance measurement application (java module)
+
+jmeter-jms/noble 2.13-5 all
+  Load testing and performance measurement application (jms module)
+
+jmeter-junit/noble 2.13-5 all
+  Load testing and performance measurement application (junit module)
+
+jmeter-ldap/noble 2.13-5 all
+  Load testing and performance measurement application (ldap module)
+
+jmeter-mail/noble 2.13-5 all
+  Load testing and performance measurement application (mail module)
+
+jmeter-mongodb/noble 2.13-5 all
+  Load testing and performance measurement application (mongodb module)
+
+jmeter-tcp/noble 2.13-5 all
+  Load testing and performance measurement application (tcp module)
+
+jsonnet/noble 0.20.0+ds-1build2 amd64
+  data templating language
+
+jsurf-alggeo/noble 0.4.1+ds-4ubuntu2 all
+  Java based visualization library for real algebraic geometry
+
+kafkacat/noble 1.7.1-3 all
+  producer and consumer for Apache Kafka (transitional package)
+
+kcat/noble 1.7.1-3 amd64
+  producer and consumer for Apache Kafka
+
+ksystemlog/noble 4:23.08.5-0ubuntu4 amd64
+  system log viewer
+
+ledgersmb/noble-updates,noble-security 1.6.33+ds-2.1ubuntu0.1 all
+  financial accounting and ERP program
+
+lemonldap-ng-handler/noble 2.18.2+ds-1 all
+  Lemonldap::NG handler part
+
+libactivemq-activeio-java/noble 3.1.4-3 all
+  ActiveMQ ActiveIO protocol implementation framework
+
+libactivemq-activeio-java-doc/noble 3.1.4-3 all
+  ActiveMQ ActiveIO protocol implementation framework - documentation
+
+libactivemq-java/noble 5.17.6+dfsg-1 all
+  Java message broker core libraries
+
+libactivemq-protobuf-java/noble 1.1-7 all
+  ActiveMQ Protocol Buffers Maven plugin
+
+libactivemq-protobuf-java-doc/noble 1.1-7 all
+  ActiveMQ Protocol Buffers Maven plugin - documentation
+
+libaether-ant-tasks-java/noble 1.0.1-6 all
+  Aether Ant Tasks
+
+libapache-admin-config-perl/noble 0.95-3 all
+  module to read/write Apache like configuration files
+
+libapache-asp-perl/noble 2.63-2 all
+  perl Apache::ASP - Active Server Pages for Apache with mod_perl
+
+libapache-authenhook-perl/noble 2.00-04+pristine-8build4 amd64
+  Perl API for Apache 2.1 authentication
+
+libapache-authznetldap-perl/noble 0.07-7 all
+  Apache-Perl module that enables to authorize a user with LDAP attributes
+
+libapache-dbi-perl/noble 1.12-3 all
+  interface connecting Apache server to database via perl's DBI
+
+libapache-dbilogger-perl/noble 0.93-14 all
+  Perl module for tracking what's being transferred in a DBI database
+
+libapache-directory-api-java/noble 2.1.2-1 all
+  Apache Directory LDAP API
+
+libapache-directory-jdbm-java/noble 2.0.0~M2-3 all
+  ApacheDS JDBM Implementation
+
+libapache-gallery-perl/noble 1.0.2-5.1 all
+  Apache module to create image galleries on-the-fly
+
+libapache-htgroup-perl/noble 1.23-4 all
+  interface to Apache authentication group files
+
+libapache-htpasswd-perl/noble 1.9-3 all
+  module to manage Unix crypt-style password file
+
+libapache-jena-java/noble 4.9.0-1 all
+  Java framework for building Semantic Web applications
+
+libapache-logformat-compiler-perl/noble 0.36-3 all
+  Perl module to pre-compile a LogFormat string
+
+libapache-mime4j-java/noble 0.8.10-1 all
+  MIME and RFC822 parser for Java
+
+libapache-mod-jk-doc/noble 1:1.2.49-1build1 all
+  Documentation of libapache2-mod-jk package
+
+libapache-opennlp-java/noble 2.3.2-1 all
+  machine learning based toolkit for the processing of natural language text
+
+libapache-poi-java/noble 4.0.1-6 all
+  Apache POI - Java API for Microsoft Documents
+
+libapache-poi-java-doc/noble 4.0.1-6 all
+  Apache POI - Java API for Microsoft Documents (Documentation)
+
+libapache-pom-java/noble 29-2 all
+  Maven metadata for all Apache Software projects
+
+libapache-qpid-proton-j-java/noble 0.34.0-1 all
+  Apache Qpid Proton-J
+
+libapache-qpid-proton-j-java-doc/noble 0.34.0-1 all
+  Apache Qpid Proton-J - documentation
+
+libapache-session-browseable-perl/noble 1.3.13-1 all
+  module adding index and search methods to Apache::Session
+
+libapache-session-ldap-perl/noble 0.5-1 all
+  LDAP implementation of Apache::Session
+
+libapache-session-memcached-perl/noble 0.03-3 all
+  Perl module for storing persistent data using memcached
+
+libapache-session-mongodb-perl/noble 0.23-2 all
+  implementation of Apache::Session
+
+libapache-session-perl/noble 1.94-2 all
+  modules for keeping persistent user data across HTTP requests
+
+libapache-session-sqlite3-perl/noble 0.03-2 all
+  SQLite3 implementation of Apache::Session
+
+libapache-session-wrapper-perl/noble 0.34-4 all
+  simple wrapper around Apache::Session
+
+libapache-sessionx-perl/noble 2.01-6 all
+  extended persistence framework for session data
+
+libapache-singleton-perl/noble 0.17-2 all
+  Singleton class for mod_perl
+
+libapache-ssllookup-perl/noble 2.00-04-4build4 amd64
+  glue layer between Perl handlers and the mod_ssl public API
+
+libapache2-authcassimple-perl/noble 0.10-4 all
+  Apache2 module to authenticate trough a CAS server
+
+libapache2-authcookie-perl/noble 3.31-2 all
+  Perl Authentication and Authorization via cookies
+
+libapache2-mod-apparmor/noble-updates 4.0.1really4.0.1-0ubuntu0.24.04.4 amd64
+  changehat AppArmor library as an Apache module
+
+libapache2-mod-apreq2/noble 2.17-5build2 amd64
+  generic Apache request library - Apache module
+
+libapache2-mod-auth-cas/noble 1.2-1build2 amd64
+  CAS authentication module for Apache2
+
+libapache2-mod-auth-gssapi/noble 1.6.4-3build2 amd64
+  GSSAPI Authentication module for Apache2
+
+libapache2-mod-auth-mellon/noble 0.19.0-1build3 amd64
+  SAML 2.0 authentication module for Apache
+
+libapache2-mod-auth-openidc/noble-updates,noble-security 2.4.15.1-1ubuntu0.1 amd64
+  OpenID Connect Relying Party implementation for Apache
+
+libapache2-mod-auth-pgsql/noble 2.0.3-6.1ubuntu4 amd64
+  Module for Apache2 which provides PostgreSQL authentication
+
+libapache2-mod-auth-plain/noble 2.0.53build1 amd64
+  Module for Apache2 which provides plaintext authentication
+
+libapache2-mod-auth-pubtkt/noble 0.13-1build3 amd64
+  key-based single-sign-on authentication module for Apache
+
+libapache2-mod-auth-radius/noble 1.5.8-2build1 amd64
+  Apache 2.x module for RADIUS authentication
+
+libapache2-mod-auth-tkt/noble 2.3.99~b1-1build1 amd64
+  lightweight single-sign-on authentication module for Apache
+
+libapache2-mod-authn-sasl/noble 1.2-2build3 amd64
+  SASL authentication backend provider for Apache
+
+libapache2-mod-authn-yolo/noble 1.1-1build1 amd64
+  Yolo style authentication for Apache 2
+
+libapache2-mod-authn-yubikey/noble 1.0-3build2 amd64
+  Yubikey authentication provider for Apache
+
+libapache2-mod-authnz-external/noble 3.3.2-2 amd64
+  authenticate Apache against external authentication services
+
+libapache2-mod-authnz-pam/noble 1.2.3-1 amd64
+  PAM authorization checker and PAM Basic Authentication provider
+
+libapache2-mod-authz-unixgroup/noble 1.1.0-2 amd64
+  access control based on unix group membership for Apache
+
+libapache2-mod-bw/noble 0.92-13 amd64
+  bandwidth limiting module for apache2
+
+libapache2-mod-dnssd/noble 0.6-4build3 amd64
+  Zeroconf support for Apache 2 via avahi
+
+libapache2-mod-encoding/noble 20040616-8 amd64
+  Apache2 module for non-ascii filename interoperability
+
+libapache2-mod-evasive/noble 1.10.1-6build1 amd64
+  evasive module to minimize HTTP DoS or brute force attacks
+
+libapache2-mod-fcgid/noble 1:2.3.9-4 amd64
+  FastCGI interface module for Apache 2
+
+libapache2-mod-form/noble 0~svn146-1.1 amd64
+  Apache module to decode data submitted from Web forms
+
+libapache2-mod-form-dev/noble 0~svn146-1.1 all
+  Apache module to decode data submitted from Web forms (development files)
+
+libapache2-mod-geoip/noble 1.2.10-1build2 amd64
+  GeoIP support for apache2
+
+libapache2-mod-intercept-form-submit/noble 1.1.0-1.1 amd64
+  Apache module to intercept login form submission and run PAM authentication
+
+libapache2-mod-jk/noble 1:1.2.49-1build1 amd64
+  Apache 2 connector for the Tomcat Java servlet engine
+
+libapache2-mod-ldap-userdir/noble 1.1.19-2.1build3 amd64
+  Apache module that provides UserDir lookups via LDAP
+
+libapache2-mod-ldap-userdir-dbg/noble 1.1.19-2.1build3 amd64
+  Debugging symbols for mod_ldap_userdir
+
+libapache2-mod-lisp/noble 1.3.1-2 amd64
+  An Apache2 module that interfaces with Lisp environments
+
+libapache2-mod-log-slow/noble 1.0.8-3build1 amd64
+  Apache module for logging of slow requests handling
+
+libapache2-mod-log-sql/noble 1.100-16.3build4 amd64
+  Use SQL to store/write your Apache queries logs - Base
+
+libapache2-mod-log-sql-dbi/noble 1.100-16.3build4 amd64
+  Use SQL to store/write your Apache queries logs - DBI interface
+
+libapache2-mod-log-sql-mysql/noble 1.100-16.3build4 amd64
+  Use SQL to store/write your Apache queries logs - MySQL interface
+
+libapache2-mod-log-sql-ssl/noble 1.100-16.3build4 amd64
+  Use SQL to store/write your Apache queries logs - SSL extension
+
+libapache2-mod-lookup-identity/noble 1.0.0-1 amd64
+  Apache module to retrieve additional information about the authenticated user
+
+libapache2-mod-mapcache/noble 1.14.0-4build2 amd64
+  tile caching server - Apache module
+
+libapache2-mod-md/noble-updates,noble-security 2.4.58-1ubuntu8.8 amd64
+  transitional package
+
+libapache2-mod-mime-xattr/noble 0.4-7build2 amd64
+  Apache2 module to get MIME info from filesystem extended attributes
+
+libapache2-mod-mono/noble 3.8-3build1 amd64
+  Apache module for running ASP.NET applications on Mono
+
+libapache2-mod-musicindex/noble 1.4.1-3.1build3 amd64
+  Browse, stream, download and search through MP3/Ogg/FLAC files
+
+libapache2-mod-neko/noble 2.3.0-2build2 amd64
+  Apache module for running server-side Neko programs
+
+libapache2-mod-netcgi-apache/noble 4.1.9-5 amd64
+  OCaml application-level Internet libraries - netcgi2 Apache2 connector
+
+libapache2-mod-oauth2/noble 3.3.1-1build2 amd64
+  OAuth 2.x Resource Server implementation for Apache
+
+libapache2-mod-parser3/noble 3.4.6-4 amd64
+  Parser 3, HTML-embedded scripting language (Apache2 module)
+
+libapache2-mod-passenger/noble 6.0.17+ds-1ubuntu5 amd64
+  web application server - apache2 integration
+
+libapache2-mod-perl2/noble 2.0.13-1build5 amd64
+  Integration of perl with the Apache2 web server
+
+libapache2-mod-perl2-dev/noble 2.0.13-1build5 all
+  Integration of perl with the Apache2 web server - development files
+
+libapache2-mod-perl2-doc/noble 2.0.13-1build5 all
+  Integration of perl with the Apache2 web server - documentation
+
+libapache2-mod-php/noble 2:8.3+93ubuntu2 all
+  server-side, HTML-embedded scripting language (Apache 2 module) (default)
+
+libapache2-mod-php8.3/noble-updates,noble-security 8.3.6-0ubuntu0.24.04.5 amd64
+  server-side, HTML-embedded scripting language (Apache 2 module)
+
+libapache2-mod-proxy-uwsgi/noble-updates,noble-security 2.4.58-1ubuntu8.8 amd64
+  transitional package
+
+libapache2-mod-python/noble-updates 3.5.0.1-3ubuntu0.24.04.1 amd64
+  Python-embedding module for Apache 2
+
+libapache2-mod-python-doc/noble-updates 3.5.0.1-3ubuntu0.24.04.1 all
+  Python-embedding module for Apache 2 - documentation
+
+libapache2-mod-qos/noble 11.74-1build3 amd64
+  quality of service module for the apache2
+
+libapache2-mod-r-base/noble 1.2.10-1build2 amd64
+  server-side R integration with Apache 2
+
+libapache2-mod-removeip/noble 1.0b-5.4build1 amd64
+  Module to remove IP from apache2's logs
+
+libapache2-mod-rivet/noble 3.2.4-1 amd64
+  Server-side Tcl programming system combining ease of use and power
+
+libapache2-mod-rivet-doc/noble 3.2.4-1 all
+  Documentation for Rivet, a server-side Tcl programming system
+
+libapache2-mod-rpaf/noble 0.6-14 amd64
+  module for Apache2 which takes the last IP from the 'X-Forwarded-For' header
+
+libapache2-mod-ruwsgi/noble 2.0.24-2ubuntu10 amd64
+  uwsgi module for Apache2 (mod_Ruwsgi)
+
+libapache2-mod-ruwsgi-dbg/noble 2.0.24-2ubuntu10 amd64
+  debugging symbols for Apache2 mod_Ruwsgi
+
+libapache2-mod-security2/noble 2.9.7-1build3 amd64
+  Tighten web applications security for Apache
+
+libapache2-mod-shib/noble 3.4.1+dfsg-2.1build1 amd64
+  Federated web single sign-on system (Apache module)
+
+libapache2-mod-sts/noble 3.4.0-2build2 amd64
+  security token exchange module for Apache 2
+
+libapache2-mod-svn/noble 1.14.3-1build4 amd64
+  Apache Subversion server modules for Apache httpd
+
+libapache2-mod-tile/noble 0.6.1-2build4 amd64
+  Apache module to deliver tiles created by renderd
+
+libapache2-mod-upload-progress/noble 0.2-2build1 amd64
+  upload progress support for the Apache web server
+
+libapache2-mod-uwsgi/noble 2.0.24-2ubuntu10 amd64
+  uwsgi module for Apache2 (mod_uwsgi)
+
+libapache2-mod-uwsgi-dbg/noble 2.0.24-2ubuntu10 amd64
+  debugging symbols for Apache2 mod_uwsgi
+
+libapache2-mod-vhost-ldap/noble 2.4.0-1build2 amd64
+  Apache 2 module for Virtual Hosting from LDAP
+
+libapache2-mod-watchcat/noble 1.1.2-2 amd64
+  Process monitoring Apache module
+
+libapache2-mod-wsgi-py3/noble 5.0.0-1build2 amd64
+  Python 3 WSGI adapter module for Apache
+
+libapache2-mod-xforward/noble 0.6-1build1 amd64
+  Apache module implements redirection based on X-Forward response header
+
+libapache2-mod-xsendfile/noble 0.12-2build1 amd64
+  Serve large static files efficiently from web applications
+
+libapache2-mpm-itk/noble 2.4.7-04-1build1 amd64
+  multiuser module for Apache
+
+libapache2-reload-perl/noble 0.14-1 all
+  module for reloading Perl modules when changed on disk
+
+libapache2-request-perl/noble 2.17-5build2 amd64
+  generic Apache request library - Perl modules
+
+libapache2-sitecontrol-perl/noble 1.05-2 all
+  perl web site authentication/authorization system
+
+libapacheds-i18n-java/noble 2.0.0~M26-4 all
+  Apache Directory Server (i18n)
+
+libapacheds-java/noble 2.0.0~M26-4 all
+  Apache Directory Server (Libraries)
+
+libapacheds-kerberos-codec-java/noble 2.0.0~M26-4 all
+  Apache Directory Server (Kerberos Codec)
+
+libapp-control-perl/noble 1.07-2 all
+  Perl module for apachectl style control of another executable
+
+libapr-memcache-dev/noble 0.7.0-3.1build1 amd64
+  memcache client - development libraries
+
+libapr-memcache0t64/noble 0.7.0-3.1build1 amd64
+  memcache client - shared library
+
+libapr1-dev/noble-updates,noble-security 1.7.2-3.1ubuntu0.1 amd64
+  Apache Portable Runtime Library - Development Headers
+
+libapr1t64/noble-updates,noble-security,now 1.7.2-3.1ubuntu0.1 amd64 [installed,automatic]
+  Apache Portable Runtime Library
+
+libapreq2-3t64/noble 2.17-5build2 amd64
+  generic Apache request library
+
+libapreq2-dev/noble 2.17-5build2 amd64
+  generic Apache request library - development files
+
+libapreq2-doc/noble 2.17-5build2 all
+  generic Apache request library - documentation
+
+libaprutil1-dbd-mysql/noble 1.6.3-1.1ubuntu7 amd64
+  Apache Portable Runtime Utility Library - MySQL Driver
+
+libaprutil1-dbd-odbc/noble 1.6.3-1.1ubuntu7 amd64
+  Apache Portable Runtime Utility Library - ODBC Driver
+
+libaprutil1-dbd-pgsql/noble 1.6.3-1.1ubuntu7 amd64
+  Apache Portable Runtime Utility Library - PostgreSQL Driver
+
+libaprutil1-dbd-sqlite3/noble,now 1.6.3-1.1ubuntu7 amd64 [installed,automatic]
+  Apache Portable Runtime Utility Library - SQLite3 Driver
+
+libaprutil1-dev/noble 1.6.3-1.1ubuntu7 amd64
+  Apache Portable Runtime Utility Library - Development Headers
+
+libaprutil1-ldap/noble,now 1.6.3-1.1ubuntu7 amd64 [installed,automatic]
+  Apache Portable Runtime Utility Library - LDAP Driver
+
+libaprutil1t64/noble,now 1.6.3-1.1ubuntu7 amd64 [installed,automatic]
+  Apache Portable Runtime Utility Library
+
+libauthen-htpasswd-perl/noble 0.171-3 all
+  Perl module to read and modify Apache .htpasswd files
+
+libavcodec-extra60/noble 7:6.1.1-3ubuntu5 amd64
+  FFmpeg library with additional de/encoders for audio/video codecs
+
+libavfilter-extra9/noble 7:6.1.1-3ubuntu5 amd64
+  FFmpeg library with extra media filters - runtime files
+
+libavformat-extra60/noble 7:6.1.1-3ubuntu5 amd64
+  FFmpeg library with additional (de)muxers for multimedia containers
+
+libavro-compiler-java/noble 1.8.2-1 all
+  Apache Avro compiler for Java
+
+libavro-dev/noble 1.11.1-1build1 amd64
+  Apache Avro C static library and headers (avro-c)
+
+libavro-java/noble 1.8.2-1 all
+  Apache Avro data serialization system
+
+libavro-maven-plugin-java/noble 1.8.2-1 all
+  Apache Avro Maven plugin
+
+libavro23/noble 1.11.1-1build1 amd64
+  Apache Avro C shared library (avro-c)
+
+libaxiom-java/noble 1.2.8-3fakesync1 all
+  Apache AXIOM - StAX-based XML Infoset compliant object model
+
+libaxis-java/noble 1.4-29 all
+  SOAP implementation in Java
+
+libaxis-java-doc/noble 1.4-29 all
+  SOAP implementation in Java (documentation)
+
+libbatik-java/noble 1.17+dfsg-1 all
+  xml.apache.org SVG Library
+
+libbsf-java/noble 1:2.4.0-8 all
+  Bean Scripting Framework to support scripting languages in Java
+
+libbsf-java-doc/noble 1:2.4.0-8 all
+  Bean Scripting Framework to support scripting - documentation
+
+libcactoos-java/noble 0.54.0-1 all
+  Collection of object-oriented Java primitives
+
+libcarrotsearch-randomizedtesting-java/noble 2.7.9-1 all
+  Randomized testing infrastructure for JUnit, Ant and Maven
+
+libcatalyst-engine-apache-perl/noble 1.16-3 all
+  Catalyst engine for Apache 1.x and 2.x
+
+libcatmandu-solr-perl/noble 0.0304-2 all
+  Catmandu modules for working with SOLR endpoints
+
+libcgi-compress-gzip-perl/noble 1.03-3 all
+  module to allow automatically compressed CGI output
+
+libcgi-expand-perl/noble 2.05-6 all
+  convert flat hash to nested data using TT2's dot convention
+
+libcgi-ssi-parser-perl/noble 0.01-2 all
+  parse Apache server-side includes directives
+
+libcgi-ssi-perl/noble 0.92-6 all
+  Perl module to use SSI from CGI scripts
+
+libclj-http-clojure/noble 2.3.0-1.1 all
+  Clojure HTTP client library
+
+libclucene-contribs1t64/noble 2.3.3.4+dfsg-1.2ubuntu2 amd64
+  language specific text analyzers (runtime)
+
+libclucene-core1t64/noble 2.3.3.4+dfsg-1.2ubuntu2 amd64
+  core library for full-featured text search engine (runtime)
+
+libclucene-dev/noble 2.3.3.4+dfsg-1.2ubuntu2 amd64
+  library for full-featured text search engine (development)
+
+libcommons-beanutils-java/noble 1.9.4-2 all
+  Apache Commons BeanUtils - Utility for manipulating Java beans
+
+libcommons-cli-java/noble 1.6.0-1 all
+  Command line arguments and options parsing library
+
+libcommons-codec-java/noble 1.16.0-1 all
+  encoder and decoders such as Base64 and hexadecimal codec
+
+libcommons-collections3-java/noble 3.2.2-3 all
+  Apache Commons Collections - Extended Collections API for Java
+
+libcommons-collections4-java/noble 4.4-2 all
+  Apache Commons Collections - Extended Collections API for Java
+
+libcommons-compress-java/noble 1.25.0-1 all
+  Java API for working with compression and archive formats
+
+libcommons-csv-java/noble 1.9.0-1 all
+  Library for reading and writing CSV files
+
+libcommons-daemon-java/noble 1.0.15-11build1 all
+  Library to launch Java applications as daemons
+
+libcommons-dbcp-java/noble 1.4-8 all
+  Database Connection Pooling Services
+
+libcommons-dbcp2-java/noble 2.10.0-1 all
+  Database Connection Pooling Services 2
+
+libcommons-email-java/noble 1.5-3 all
+  Apache Commons Java API for sending email
+
+libcommons-jexl2-java/noble 2.1.1-6 all
+  Apache Commons JEXL - Java Expression Language
+
+libcommons-jexl3-java/noble 3.1-3 all
+  Apache Commons JEXL - Java Expression Language
+
+libcommons-jxpath-java/noble 1.3-10 all
+  Apache Commons JXPath - XPath expressions applied to Java objects
+
+libcommons-lang3-java/noble 3.14.0-1 all
+  Apache Commons Lang utility classes
+
+libcommons-math-java/noble 2.2-8 all
+  Java lightweight mathematics and statistics components
+
+libcommons-math-java-doc/noble 2.2-8 all
+  Java lightweight mathematics and statistics components - documentation
+
+libcommons-math3-java/noble 3.6.1-3 all
+  Java lightweight mathematics and statistics components
+
+libcommons-math3-java-doc/noble 3.6.1-3 all
+  Java lightweight mathematics and statistics components - documentation
+
+libcommons-net-java/noble 3.9.0-1 all
+  Apache Commons Net - Java client API for basic Internet protocols
+
+libcommons-parent-java/noble 56-1 all
+  Maven metadata for Apache Commons project
+
+libcommons-pool2-java/noble 2.11.1-1 all
+  Apache Commons Pool 2 - Pooling implementation for Java objects
+
+libcommons-rdf-java/noble 0.5.0-2 all
+  type-safe, non-general API that covers RDF 1.1
+
+libcommons-text-java/noble 1.11.0-1 all
+  Apache Commons Text
+
+libcommons-vfs-java/noble 2.1-4 all
+  Java API for accessing various filesystems
+
+libconfig-any-perl/noble 0.33-1 all
+  module to load configuration from different file formats
+
+libconfig-apacheformat-perl/noble 1.2-6 all
+  Perl module to parse Apache format config files
+
+libconfig-find-perl/noble 0.31-3 all
+  module to search configuration files using OS dependent heuristics
+
+libconfig-general-perl/noble 2.65-2 all
+  generic configuration module
+
+libcurator-client-java/noble 5.5.0-1 all
+  Apache Curator Client
+
+libcurator-discovery-java/noble 5.5.0-1 all
+  Apache Curator Service Discovery
+
+libcurator-framework-java/noble 5.5.0-1 all
+  Apache Curator Framework
+
+libcurator-parent-java/noble 5.5.0-1 all
+  Apache Curator Parent
+
+libcurator-recipes-java/noble 5.5.0-1 all
+  Apache Curator Recipes
+
+libcurator-test-java/noble 5.5.0-1 all
+  Apache Curator Testing Utilities
+
+libdaemon-generic-perl/noble 0.85-2 all
+  framework to provide start/stop/reload for a daemon
+
+libderby-java/noble 10.14.2.0-3 all
+  Apache Derby Database Engine and Embedded JDBC Driver
+
+libderbyclient-java/noble 10.14.2.0-3 all
+  Apache Derby Client JDBC Driver
+
+libdotconf-dev/noble 1.3-0.3fakesync1build3 amd64
+  Configuration file parser library - development files
+
+libdotconf0/noble 1.3-0.3fakesync1build3 amd64
+  Configuration file parser library - runtime files
+
+libdotconf0-dbg/noble 1.3-0.3fakesync1build3 amd64
+  Configuration file parser library - debugging symbols
+
+libdropwizard-metrics-java/noble 3.2.6-1 all
+  capture JVM- and application-level metrics for Java applications
+
+libescapevelocity-java/noble 0.9.1-2 all
+  Subset reimplementation of Apache Velocity with a much simpler API
+
+libfelix-gogo-command-java/noble 0.14.0-2.1 all
+  Apache Felix Gogo Command bundle
+
+libfelix-gogo-command-java-doc/noble 0.14.0-2.1 all
+  Documentation for Apache Felix Gogo Command bundle
+
+libfelix-gogo-runtime-java/noble 0.16.2-1.1 all
+  Apache Felix Gogo Runtime bundle
+
+libfelix-gogo-runtime-java-doc/noble 0.16.2-1.1 all
+  Documentation for Apache Felix Gogo Runtime bundle
+
+libfelix-gogo-shell-java/noble 0.12.0-1.1 all
+  Apache Felix Gogo Shell bundle
+
+libfelix-gogo-shell-java-doc/noble 0.12.0-1.1 all
+  Documentation for Apache Felix Gogo Shell bundle
+
+libfelix-osgi-obr-java/noble 1.0.2-5fakesync1 all
+  OSGi OBR Service API
+
+libfelix-osgi-obr-java-doc/noble 1.0.2-5fakesync1 all
+  Javadoc API for OSGi OBR Service API
+
+libfelix-resolver-java/noble 1.16.0-1 all
+  OSGi Resolver implementation by Apache Felix
+
+libfelix-shell-java/noble 1.4.3-2 all
+  Felix OSGi shell to issue commands to the framework
+
+libfelix-shell-tui-java/noble 1.4.1-4 all
+  Apache Felix Shell TUI
+
+libfelix-shell-tui-java-doc/noble 1.4.1-4 all
+  Documentation for Apache Felix Shell TUI
+
+libfelix-utils-java/noble 1.8.6-1.1 all
+  collection of utility classes for Apache Felix
+
+libfelix-utils-java-doc/noble 1.8.6-1.1 all
+  collection of utility classes for Apache Felix - documentation
+
+libfile-listing-perl/noble 6.16-1 all
+  module to parse directory listings
+
+libfile-mmagic-perl/noble 1.30-1.1 all
+  Perl module to guess file type
+
+libfile-mmagic-xs-perl/noble 0.09008-4build5 amd64
+  Perl module to guess file type (à la mod_mime_magic)
+
+libfontbox-java/noble 1:1.8.16-5 all
+  Java font library
+
+libfontbox2-java/noble 2.0.29-1 all
+  Java font library
+
+libfpm-helper0/noble 4.2-2.5 amd64
+  ASP.NET backend for FastCGI Process Manager - helper lib
+
+libgeronimo-annotation-1.3-spec-java/noble 1.3-1 all
+  Apache Geronimo Common Annotations 1.3 API
+
+libgeronimo-concurrent-1.0-spec-java/noble 1.0~alpha-1-1.1 all
+  Apache Geronimo Concurrency Utilities for Java EE API
+
+libgeronimo-ejb-3.2-spec-java/noble 1.0~alpha-1-3 all
+  Apache Geronimo EJB 3.2 API
+
+libgeronimo-interceptor-3.0-spec-java/noble 1.0.1-4fakesync all
+  Geronimo API implementation of the Interceptor 3.0 spec
+
+libgeronimo-j2ee-management-1.1-spec-java/noble 1.0.1-1.1 all
+  Apache Geronimo J2EE Management 1.1 API
+
+libgeronimo-jcache-1.0-spec-java/noble 1.0~alpha-1-2 all
+  Apache Geronimo JCache 1.0 API
+
+libgeronimo-jpa-2.0-spec-java/noble 1.1-4 all
+  Geronimo JSR-317 Java Persistence (JPA) 2.0 Spec API
+
+libgeronimo-jta-1.2-spec-java/noble 1.0~alpha-1-2 all
+  Apache Geronimo JTA 1.2 API
+
+libgeronimo-validation-1.0-spec-java/noble 1.1-3 all
+  Geronimo JSR-303 Bean Validation Spec API
+
+libgeronimo-validation-1.0-spec-java-doc/noble 1.1-3 all
+  Documentation for libgeronimo-validation-1.0-spec-java
+
+libgeronimo-validation-1.1-spec-java/noble 1.0-2 all
+  Geronimo JSR-349 Bean Validation Spec API
+
+libgeronimo-validation-1.1-spec-java-doc/noble 1.0-2 all
+  Documentation for libgeronimo-validation-1.1-spec-java
+
+libgoogle-http-client-java/noble 1.42.0-2 all
+  Google HTTP Client Library for Java
+
+libgraxxia-java/noble 1.0~20150714-2.1 all
+  Wrappers for doing Mathematics in Groovy
+
+libgridsite-dev/noble 3.0.0~20230214gitee81151-1.1build3 amd64
+  Developers tools for gridsite
+
+libgridsite6t64/noble 3.0.0~20230214gitee81151-1.1build3 amd64
+  Run time libraries for mod_gridsite and gridsite-clients
+
+libhtml-lint-perl/noble 2.32+dfsg-1.1 all
+  checker of HTML errors in strings or files
+
+libiconv-hook1/noble 0.0.20021209-12build1 amd64
+  extension of iconv for libapache-mod-encoding
+
+libintellij-utils-java/noble 183.5153.4-4ubuntu1 all
+  IntelliJ IDEA utility classes
+
+libjackrabbit-java/noble 2.20.11-1 all
+  content repository implementation (JCR API)
+
+libjarchivelib-java/noble 1.2.0-2 all
+  simple archiving and compression library for Java
+
+libjaxp1.3-java/noble 1.3.05-6 all
+  Java XML parser and transformer APIs (DOM, SAX, JAXP, TrAX)
+
+libjbzip2-java/noble 0.9.1-8 all
+  bzip2 compression/decompression library
+
+libjempbox-java/noble 1:1.8.16-5 all
+  XMP Compatible Java Library
+
+libjettison-java/noble 1.5.4-1 all
+  collection of StAX parsers and writers for JSON
+
+libjeuclid-core-java/noble 3.1.9-5 all
+  Complete MathML rendering solution (java classes)
+
+libjeuclid-fop-java/noble 3.1.9-5 all
+  Complete MathML rendering solution (fop plugin)
+
+libjglobus-axisg-java/noble 2.1.0-9 all
+  Globus Java - Apache AXIS support
+
+libjs-jquery-jush/noble 12-4 all
+  jQuery Syntax Highlighter
+
+libjs-schoolkit/noble 0.2-2 all
+  Tools ordinarily available in school kits for geometry
+
+libjsonnet-dev/noble 0.20.0+ds-1build2 amd64
+  data templating language (devel)
+
+libjsonnet0/noble 0.20.0+ds-1build2 amd64
+  data templating language (lib)
+
+libkinosearch1-perl/noble 1.01-6 amd64
+  Perl library providing search engine features
+
+liblemonldap-ng-ssoaas-apache-client-perl/noble 2.18.2+ds-1 all
+  Lemonldap::NG SSOaaS client for Apache
+
+liblinux-pid-perl/noble 0.04-2build4 amd64
+  wrapper around the getpid() and getppid() C functions
+
+liblog-log4perl-perl/noble 1.57-1 all
+  Perl port of the widely popular log4j logging package
+
+liblog4ada-dev/noble-updates,noble-security 1.3.1.b6dafb49-13build2.1 amd64
+  Ada library for flexible logging (development)
+
+liblog4ada-doc/noble-updates,noble-security 1.3.1.b6dafb49-13build2.1 all
+  Ada library for flexible logging (documentation)
+
+liblog4ada7/noble-updates,noble-security 1.3.1.b6dafb49-13build2.1 amd64
+  Ada library for flexible logging (runtime)
+
+liblog4c-dev/noble 1.2.4-3.1build1 amd64
+  C library for flexible logging (development)
+
+liblog4c-doc/noble 1.2.4-3.1build1 all
+  C library for flexible logging (documentation)
+
+liblog4c3t64/noble 1.2.4-3.1build1 amd64
+  C library for flexible logging (runtime)
+
+liblog4cpp-doc/noble 1.0-3 all
+  C++ library for flexible logging (documentation)
+
+liblog4cpp5-dev/noble 1.1.3-3.1 amd64
+  C++ library for flexible logging (development)
+
+liblog4cpp5v5/noble 1.1.3-3.1 amd64
+  C++ library for flexible logging (runtime)
+
+liblog4j-extras1.2-java/noble 1.2.17-3 all
+  Extras for Apache log4j
+
+liblog4j1.2-java-doc/noble 1.2.17-11 all
+  Documentation for liblog4j1.2-java
+
+liblog4j2-java/noble 2.19.0-2 all
+  Apache Log4j - Logging Framework for Java
+
+liblog4net-cil-dev/noble 1.2.10+dfsg-9 all
+  highly configurable logging API for the CLI
+
+liblog4net1.2-cil/noble 1.2.10+dfsg-9 all
+  highly configurable logging API for the CLI
+
+liblucene9-java/noble 9.10.0+dfsg-1 all
+  text search engine library
+
+libmasonx-request-withapachesession-perl/noble 0.31-3 all
+  Session handler in the Mason Request object
+
+libmaven-artifact-transfer-java/noble 0.13.1-2 all
+  Apache Maven Artifact Transfer
+
+libmaven-mapping-java/noble 3.0.0-2 all
+  Apache Maven Mapping
+
+libmaven-parent-java/noble 35-1 all
+  Maven metadata for Apache Maven itself
+
+libmaven-remote-resources-plugin-java/noble 3.0.0-1 all
+  Apache Maven Remote Resources Plugin
+
+libmaven-reporting-exec-java/noble 1.6.0-1 all
+  Apache Maven Reporting Executor
+
+libmaven-resolver-java/noble 1.6.3-1 all
+  Library to handle Java artifact repositories
+
+libmaven-resolver-transport-http-java/noble 1.6.3-1 all
+  Library to handle Java artifact repositories (HTTP transport)
+
+libmavibot-java/noble 1.0.0~M8-1 all
+  Apache Mavibot - MVCC BTree Java Implementation
+
+libmina-java/noble 1.1.7.dfsg-13ubuntu1 all
+  Java network application framework
+
+libmina-java-doc/noble 1.1.7.dfsg-13ubuntu1 all
+  Java network application framework - documentation
+
+libmina2-java/noble 2.2.1-3 all
+  Java network application framework
+
+libmodule-refresh-perl/noble 0.18-2 all
+  tool to refresh %INC files when updated on disk
+
+libnet-server-perl/noble 2.014-1 all
+  extensible, general perl server engine
+
+libnet-stomp-perl/noble 0.62-1 all
+  Perl module providing a Streaming Text Orientated Messaging Protocol client
+
+libnetsds-perl/noble 1.301-4 all
+  Service Delivery Suite framework
+
+libnetty-tcnative-java/noble 2.0.28-1build4 all
+  Tomcat native fork for Netty
+
+libnetty-tcnative-jni/noble 2.0.28-1build4 amd64
+  Tomcat native fork for Netty (JNI library)
+
+libnginx-mod-http-subs-filter/noble 1:0.6.4-6build1 amd64
+  Substitution filter module for Nginx
+
+liboauth-signpost-java/noble 1.2.1.2-3 all
+  simple OAuth message signing for Java
+
+liboauth2-apache-dev/noble 1.6.0-1build4 amd64
+  Generic oauth2 and OIDC library (apache2 bindings development)
+
+liboauth2-apache0/noble 1.6.0-1build4 amd64
+  Generic oauth2 and OIDC library (apache2 bindings)
+
+libocamlnet-ocaml-dev/noble 4.1.9-5 amd64
+  OCaml application-level Internet libraries - core development libraries
+
+libonnx-dev/noble 1.14.1-2.1build2 amd64
+  Open Neural Network Exchange (ONNX) (dev)
+
+libonnx-testdata/noble 1.14.1-2.1build2 all
+  Open Neural Network Exchange (ONNX) (test data)
+
+libonnx1t64/noble 1.14.1-2.1build2 amd64
+  Open Neural Network Exchange (ONNX) (libs)
+
+libopenjpa-java/noble 2.4.2-9 all
+  Java Persistence 2.0 API (JPA) implementation library
+
+libpantomime-clojure/noble 2.1.0+dfsg-2 all
+  Clojure library dealing with MIME types
+
+libpdfbox-java/noble 1:1.8.16-5 all
+  PDF library for Java
+
+libpdfbox2-java/noble 2.0.29-1 all
+  PDF library for Java
+
+libplack-middleware-expires-perl/noble 0.06-2 all
+  mod_expires for plack
+
+libplexus-io-java/noble 3.3.1-2 all
+  Plexus IO Components
+
+libplucene-perl/noble 1.25-5 all
+  Perl port of the Lucene search engine
+
+libportlet-api-2.0-spec-java/noble 1.0-3 all
+  Java Portlet Specification V2.0
+
+libpuppetlabs-http-client-clojure/noble 2.1.1-1 all
+  Clojure wrapper around libhttpasyncclient-java
+
+libqpid-proton-j-extensions-java/noble 1.2.4-2 all
+  Websocket extension of Qpid Proton-J
+
+librdkafka++1/noble 2.3.0-1build2 amd64
+  library implementing the Apache Kafka protocol (C++ bindings)
+
+librdkafka-dev/noble 2.3.0-1build2 amd64
+  library implementing the Apache Kafka protocol (development headers)
+
+librdkafka1/noble 2.3.0-1build2 amd64
+  library implementing the Apache Kafka protocol
+
+libreverseproxy-formfiller-perl/noble 0.5-2 all
+  ModPerl module to fill and submit any html form
+
+librose-uri-perl/noble 1.02-2 all
+  module for an easy  manipulation of URI components
+
+librpc-xml-perl/noble 0.82-1 all
+  Perl implementation of the XML-RPC protocol
+
+librunapp-perl/noble 0.13-3 all
+  generic module to run web-applications
+
+librust-apr-dev/noble 0.1.9-1 amd64
+  Rust bindings for Apache Portable Runtime - Rust source code
+
+libsambox-java/noble 2.4.24-1 all
+  SAMBox PDF processor
+
+libserf-1-1/noble-updates,noble-security 1.3.10-1ubuntu0.24.04.1 amd64
+  high-performance asynchronous HTTP client library
+
+libserf-dev/noble-updates,noble-security 1.3.10-1ubuntu0.24.04.1 amd64
+  high-performance asynchronous HTTP client library headers
+
+libshiro-java/noble 1.3.2-5 all
+  Apache Shiro - Java Security Framework
+
+libslf4j-java/noble 1.7.32-1 all
+  Simple Logging Facade for Java
+
+libsvn-dev/noble 1.14.3-1build4 amd64
+  Development files for Apache Subversion libraries
+
+libsvn-doc/noble 1.14.3-1build4 all
+  Developer documentation for libsvn
+
+libsvn-java/noble 1.14.3-1build4 amd64
+  Java bindings for Apache Subversion
+
+libsvn-perl/noble 1.14.3-1build4 amd64
+  Perl bindings for Apache Subversion
+
+libsvn1/noble 1.14.3-1build4 amd64
+  Shared libraries used by Apache Subversion
+
+libtaglibs-standard-impl-java/noble 1.2.5-3 all
+  Apache JSP Standard Taglib Implementation
+
+libtaglibs-standard-jstlel-java/noble 1.2.5-3 all
+  Apache JSP Standard Taglib 1.0 EL Support
+
+libtaglibs-standard-spec-java/noble 1.2.5-3 all
+  Apache JSP Standard Taglib Specification API
+
+libtcnative-1/noble 1.2.35-1build2 amd64
+  Tomcat native library using the Apache Portable Runtime
+
+libtie-dxhash-perl/noble 1.05-4 all
+  Perl module that keeps insertion order in hash
+
+libtika-java/noble 1.22-2 all
+  Apache Tika - content analysis toolkit
+
+libtiles-autotag-java/noble 1.2-5 all
+  Automatic tag generation for Apache Tiles
+
+libtiles-java/noble 3.0.7-5 all
+  Java templating framework for web application user interfaces
+
+libtiles-java-doc/noble 3.0.7-5 all
+  Java templating framework for web application user interfaces - documentation
+
+libtomcat10-embed-java/noble 10.1.16-1 all
+  Apache Tomcat 10 - Servlet and JSP engine -- embed libraries
+
+libtomcat10-java/noble 10.1.16-1 all
+  Apache Tomcat 10 - Servlet and JSP engine -- core libraries
+
+libtomcat9-java/noble-updates,noble-security 9.0.70-2ubuntu0.1 all
+  Apache Tomcat 9 - Servlet and JSP engine -- core libraries
+
+libtools-logging-clojure/noble 1.2.4-2 all
+  Logging macros for Clojure
+
+libuima-adapter-vinci-java/noble 2.10.2-4 all
+  Library to provide Vinci web services within UIMA
+
+libuima-addons-java/noble 2.3.1-8 all
+  Apache UIMA Addons
+
+libuima-as-java/noble 2.3.1-11 all
+  Apache UIMA Asynch Scaleout framework
+
+libuima-core-java/noble 2.10.2-4 all
+  Core library for the UIMA framework
+
+libuima-cpe-java/noble 2.10.2-4 all
+  Library for the UIMA Collection Processing Engine
+
+libuima-document-annotation-java/noble 2.10.2-4 all
+  Library for the UIMA document annotation
+
+libuima-tools-java/noble 2.10.2-4 all
+  UIMA library for the UIMA tools
+
+libuima-vinci-java/noble 2.10.2-4 all
+  Library to handle Vinci web service protocol
+
+libwcat1/noble 1.1-3 amd64
+  Process monitoring library
+
+libwcat1-dev/noble 1.1-3 amd64
+  Process monitoring library (development files)
+
+libweb-id-perl/noble 1.927-3 all
+  implementation of WebID (a.k.a. FOAF+SSL)
+
+libwinpr2-2t64/noble 2.11.5+dfsg1-1build2 amd64
+  Windows Portable Runtime library
+
+libwinpr2-dev/noble 2.11.5+dfsg1-1build2 amd64
+  Windows Portable Runtime library (development files)
+
+libwinpr3-3/noble-updates,noble-security 3.5.1+dfsg1-0ubuntu1.1 amd64
+  Windows Portable Runtime library
+
+libwinpr3-dev/noble-updates,noble-security 3.5.1+dfsg1-0ubuntu1.1 amd64
+  Windows Portable Runtime library (development files)
+
+libwolfssl-dev/noble 5.6.6-1.3build1 amd64
+  Development files for the wolfSSL encryption library
+
+libwolfssl42t64/noble 5.6.6-1.3build1 amd64
+  wolfSSL encryption library
+
+libws-commons-util-java/noble 1.0.1-10 all
+  Common utilities from the Apache Web Services Project
+
+libwss4j-java/noble 1.6.19-3 all
+  Apache WSS4J WS-Security implementation
+
+libxalan-c-dev/noble 1.12-7.1build2 amd64
+  XSLT processor library for C++ [development]
+
+libxalan-c112t64/noble 1.12-7.1build2 amd64
+  XSLT processor library for C++
+
+libxml-commons-resolver1.1-java/noble 1.2-11 all
+  XML entity and URI resolver library
+
+libxml-commons-resolver1.1-java-doc/noble 1.2-11 all
+  XML entity and URI resolver library -- documentation
+
+libxml-security-c-dev/noble 2.0.4-2build2 amd64
+  C++ library for XML Digital Signatures (development)
+
+libxml-security-c20/noble 2.0.4-2build2 amd64
+  C++ library for XML Digital Signatures (runtime)
+
+libxml-security-java/noble 2.1.8-1 all
+  Apache Santuario -- XML Security for Java
+
+libxmlbeans-maven-plugin-java/noble 2.3.3-4 all
+  Maven XMLBeans Plugin
+
+libxmlgraphics-commons-java/noble 2.8-2 all
+  Reusable components used by Batik and FOP
+
+libxmlgraphics-commons-java-doc/noble 2.8-2 all
+  Reusable components used by Batik and FOP (documentation)
+
+libxslthl-java/noble 2.1.3-6 all
+  XSLT syntax highlighting
+
+loook/noble 0.9.0-1 all
+  Search strings in ODF and OOXML documents
+
+man2html/noble 1.6g-16 amd64
+  browse man pages in your web browser
+
+mapcache-cgi/noble 1.14.0-4build2 amd64
+  tile caching server - CGI binary
+
+mate-user-share/noble 1.26.0-1build3 amd64
+  User level public file sharing via WebDAV
+
+mate-user-share-common/noble 1.26.0-1build3 all
+  User level public file sharing via WebDAV (common files)
+
+memcached/noble 1.6.24-1build3 amd64
+  High-performance in-memory object caching system
+
+mod-musicindex-common/noble 1.4.1-3.1build3 all
+  Common files for mod-musicindex
+
+monitoring-plugins-contrib/noble 45.20231212ubuntu2 amd64
+  Plugins for nagios compatible monitoring systems
+
+mono-apache-server/noble 4.2-2.5 all
+  ASP.NET backend for mod_mono Apache module - default version
+
+mono-apache-server4/noble 4.2-2.5 all
+  ASP.NET 4.5 backend for mod_mono Apache module
+
+mono-fastcgi-server/noble 4.2-2.5 all
+  ASP.NET backend for FastCGI webservers - default version
+
+mono-fastcgi-server4/noble 4.2-2.5 all
+  ASP.NET 4.0 backend for FastCGI webservers
+
+mono-fpm-server/noble 4.2-2.5 all
+  ASP.NET backend for FastCGI Process Manager
+
+mono-xsp/noble 4.2-2.5 all
+  simple web server to run ASP.NET applications - default version
+
+mono-xsp4/noble 4.2-2.5 all
+  simple web server to run ASP.NET 4.0 applications
+
+mono-xsp4-base/noble 4.2-2.5 all
+  base libraries for XSP 4.0
+
+mrtgutils/noble 0.8.4-1 amd64
+  Utilities to generate statistics for mrtg
+
+nano/noble-updates,noble-security,now 7.2-2ubuntu0.1 amd64 [installed,automatic]
+  small, friendly text editor inspired by Pico
+
+nano-tiny/noble-updates,noble-security 7.2-2ubuntu0.1 amd64
+  small, friendly text editor inspired by Pico - tiny build
+
+netdata-apache2/noble 1.43.2-1build2 all
+  real-time performance monitoring (apache integration)
+
+ntpsec-ntpviz/noble 1.2.2+dfsg1-4build2 amd64
+  NTP statistics graphing utility
+
+open-infrastructure-service-tools/noble 20231120-1 all
+  additional tools to ease system administration and integration
+
+opennlp/noble 2.3.2-1 all
+  wrapper for Apache OpenNLP natural language text processing toolkit
+
+openvpn-auth-ldap/noble 2.0.4-3build1 amd64
+  OpenVPN LDAP authentication module
+
+parser3-cgi/noble 3.4.6-4 amd64
+  Parser 3, HTML-embedded scripting language (CGI binary)
+
+pcp-export-pcp2spark/noble 6.2.0-1.1build4 amd64
+  Tool for exporting data from PCP to Apache Spark
+
+phing/noble 2.17.4-1 all
+  PHP project build system or build tool based on Apache Ant
+
+php-cgi/noble 2:8.3+93ubuntu2 all
+  server-side, HTML-embedded scripting language (CGI binary) (default)
+
+php-solr/noble 2.6.0+2.4.0-3ubuntu3 amd64
+  PHP extension for communicating with Apache Solr server
+
+php-solr-all-dev/noble 2.6.0+2.4.0-3ubuntu3 all
+  PHP extension for communicating with Apache Solr server
+
+php-stomp/noble 2.0.3-2ubuntu1 amd64
+  Streaming Text Oriented Messaging Protocol (STOMP) client module for PHP
+
+php-stomp-all-dev/noble 2.0.3-2ubuntu1 all
+  Streaming Text Oriented Messaging Protocol (STOMP) client module for PHP
+
+php-zend-code/noble 4.13.0-2 all
+  Laminas Project - Code component
+
+php8.3-cgi/noble-updates,noble-security 8.3.6-0ubuntu0.24.04.5 amd64
+  server-side, HTML-embedded scripting language (CGI binary)
+
+php8.3-fpm/noble-updates,noble-security 8.3.6-0ubuntu0.24.04.5 amd64
+  server-side, HTML-embedded scripting language (FPM-CGI binary)
+
+php8.3-solr/noble 2.6.0+2.4.0-3ubuntu3 amd64
+  PHP extension for communicating with Apache Solr server
+
+php8.3-stomp/noble 2.0.3-2ubuntu1 amd64
+  Streaming Text Oriented Messaging Protocol (STOMP) client module for PHP
+
+phpliteadmin/noble 1.9.8.2-2 all
+  web-based SQLite database admin tool
+
+pinot/noble 1.21-1build3 amd64
+  meta-search engine for local files and web queries
+
+postgresql-16-age/noble 1.5.0~rc0-2 amd64
+  Graph database optimized for fast analysis and real-time data processing
+
+proftpd-core/noble-updates,noble-security 1.3.8.b+dfsg-1ubuntu0.1 amd64
+  Versatile, virtual-hosting FTP daemon - binaries
+
+proftpd-dev/noble-updates,noble-security 1.3.8.b+dfsg-1ubuntu0.1 amd64
+  Versatile, virtual-hosting FTP daemon - development files
+
+proftpd-doc/noble-updates,noble-security 1.3.8.b+dfsg-1ubuntu0.1 all
+  Versatile, virtual-hosting FTP daemon - documentation
+
+proftpd-mod-crypto/noble-updates,noble-security 1.3.8.b+dfsg-1ubuntu0.1 amd64
+  Versatile, virtual-hosting FTP daemon - TLS/SSL/SFTP modules
+
+proftpd-mod-geoip/noble-updates,noble-security 1.3.8.b+dfsg-1ubuntu0.1 amd64
+  Versatile, virtual-hosting FTP daemon - GeoIP module
+
+proftpd-mod-ldap/noble-updates,noble-security 1.3.8.b+dfsg-1ubuntu0.1 amd64
+  Versatile, virtual-hosting FTP daemon - LDAP module
+
+proftpd-mod-mysql/noble-updates,noble-security 1.3.8.b+dfsg-1ubuntu0.1 amd64
+  Versatile, virtual-hosting FTP daemon - MySQL module
+
+proftpd-mod-odbc/noble-updates,noble-security 1.3.8.b+dfsg-1ubuntu0.1 amd64
+  Versatile, virtual-hosting FTP daemon - ODBC module
+
+proftpd-mod-pgsql/noble-updates,noble-security 1.3.8.b+dfsg-1ubuntu0.1 amd64
+  Versatile, virtual-hosting FTP daemon - PostgreSQL module
+
+proftpd-mod-snmp/noble-updates,noble-security 1.3.8.b+dfsg-1ubuntu0.1 amd64
+  Versatile, virtual-hosting FTP daemon - SNMP module
+
+proftpd-mod-sqlite/noble-updates,noble-security 1.3.8.b+dfsg-1ubuntu0.1 amd64
+  Versatile, virtual-hosting FTP daemon - SQLite3 module
+
+proftpd-mod-wrap/noble-updates,noble-security 1.3.8.b+dfsg-1ubuntu0.1 amd64
+  Versatile, virtual-hosting FTP daemon - tcpwrapper module
+
+prometheus-apache-exporter/noble-updates,noble-security 1.0.6-1ubuntu0.3 amd64
+  Prometheus exporter for Apache server metrics
+
+prometheus-exporter-exporter/noble-updates,noble-security 0.4.0-1ubuntu0.24.04.3 amd64
+  simple reverse proxy to other Prometheus exporters
+
+prometheus-trafficserver-exporter/noble 0.3.2-2 all
+  Prometheus exporter for Apache Traffic Server
+
+puppet-module-puppetlabs-apache/noble 12.0.2-1 all
+  Puppet module for Apache
+
+pure-ftpd/noble 1.0.50-2.2build2 amd64
+  Secure and efficient FTP server
+
+pure-ftpd-ldap/noble 1.0.50-2.2build2 amd64
+  Secure and efficient FTP server with LDAP user authentication
+
+pure-ftpd-mysql/noble 1.0.50-2.2build2 amd64
+  Secure and efficient FTP server with MySQL user authentication
+
+pure-ftpd-postgresql/noble 1.0.50-2.2build2 amd64
+  Secure and efficient FTP server with PostgreSQL user authentication
+
+pwauth/noble 2.3.11-5 amd64
+  authenticator for mod_authnz_external and the Apache HTTP Daemon
+
+pycsw-wsgi/noble 2.6.1+dfsg-2 all
+  WSGI Apache CSW service based on pycsw
+
+python-flask-autoindex-doc/noble 0.6.6-3 all
+  automatically generated index pages for Flask applications (documentation)
+
+python-kafka-doc/noble 2.0.2-5 all
+  Pure Python client for Apache Kafka - doc
+
+python-sortedcollections-doc/noble 2.1.0-2 all
+  Python documentation for Sorted Collections
+
+python-urwid-doc/noble 2.6.10-1 all
+  curses-based UI/widget library (common documentation)
+
+python3-ajpy/noble 0.0.5-2 all
+  Python module to craft AJP requests
+
+python3-avro/noble 1.11.1+dfsg-2 all
+  Apache Avro serialization system (Python 3 library)
+
+python3-cassandra/noble 3.29.0-3build2 amd64
+  Python driver for Apache Cassandra (Python 3)
+
+python3-cassandra-doc/noble 3.29.0-3build2 all
+  Python driver for Apache Cassandra (documentation)
+
+python3-certbot-apache/noble,now 2.9.0-1 all [installed]
+  Apache plugin for Certbot
+
+python3-cherrypy3/noble 18.9.0-2 all
+  Python web development framework - Python 3 module
+
+python3-cs/noble 3.2.0-1 all
+  simple, yet powerful CloudStack API client (Python 3 module)
+
+python3-django-downloadview/noble 2.3.0-1 all
+  efficient static file serving with Django (Python3 version)
+
+python3-feather-format/noble 0.3.1+dfsg1-8build1 amd64
+  Python interface to the Apache Arrow-based Feather File Format (Python 3)
+
+python3-flask-autoindex/noble 0.6.6-3 all
+  automatically generated index pages for Flask applications (Python 3)
+
+python3-jsonnet/noble 0.20.0+ds-1build2 amd64
+  data templating language (Python)
+
+python3-kafka/noble 2.0.2-5 all
+  Pure Python client for Apache Kafka - Python 3.x
+
+python3-kazoo/noble 2.9.0-2 all
+  higher level API to Apache Zookeeper (Python 3)
+
+python3-kerberos/noble 1.1.14-3.1build9 amd64
+  GSSAPI interface module - Python 3.x
+
+python3-libcloud/noble 3.4.1-5 all
+  unified Python interface into the cloud (Python3 version)
+
+python3-onnx/noble 1.14.1-2.1build2 amd64
+  Open Neural Network Exchange (ONNX) (Python)
+
+python3-pysolr/noble 3.8.1-1.1 all
+  lightweight Python3 wrapper for querying Apache Solr
+
+python3-retrying/noble 1.3.3-4 all
+  simplifies the task of adding retry behavior - Python 3.x
+
+python3-sahara-plugin-vanilla/noble 10.0.0-0ubuntu1 all
+  OpenStack data processing cluster as a service - Vanilla/Hadoop plugin
+
+python3-schema-salad/noble 8.5.20240102191335-1build1 amd64
+  Schema Annotations for Linked Avro Data (SALAD)
+
+python3-sortedcollections/noble 2.1.0-2 all
+  Python 3 Sorted Collections
+
+python3-subversion/noble 1.14.3-1build4 amd64
+  Python3 bindings for Apache Subversion
+
+python3-thriftpy/noble 0.3.9+ds1-3build1 amd64
+  Pure Python implementation of Apache Thrift
+
+python3-urwid/noble 2.6.10-1 amd64
+  curses-based UI/widget library for Python 3
+
+python3-zlmdb/noble 22.6.1-3 all
+  Object-relational in-memory database layer based on LMDB
+
+r-cran-nanoarrow/noble 0.4.0-1 amd64
+  GNU R interface to the 'nanoarrow' 'C' Library
+
+r-cran-rcpphnsw/noble 0.5.0+ds-1 amd64
+  R bindings for a Library for Approximate Nearest Neighbors
+
+r-cran-solrium/noble 1.2.0+dfsg-1 all
+  general purpose R interface to 'Solr'
+
+r-cran-timechange/noble 0.3.0-1 amd64
+  Efficient Manipulation of Date-Times
+
+radicale/noble 3.1.8-4ubuntu1 all
+  simple calendar and addressbook server - daemon
+
+resource-agents-extra/noble 1:4.13.0-1ubuntu4 amd64
+  Cluster Resource Agents
+
+rsyslog-kafka/noble-updates 8.2312.0-3ubuntu9.1 amd64
+  Apache Kafka support for rsyslog
+
+rt4-apache2/noble 4.4.7+dfsg-1 all
+  Apache 2 specific files for request-tracker4
+
+rt4-fcgi/noble 4.4.7+dfsg-1 all
+  External FastCGI support for request-tracker4
+
+rt5-apache2/noble 5.0.5+dfsg-2 all
+  Apache 2 specific files for request-tracker5
+
+rt5-fcgi/noble 5.0.5+dfsg-2 all
+  External FastCGI support for request-tracker5
+
+ruby-grack/noble 2.0.2-3 all
+  Git Smart HTTP Server Rack implementation in Ruby/Rack
+
+ruby-rack-rewrite/noble 1.5.1-1.1 all
+  rack middleware for enforcing rewrite rules
+
+ruby-svn/noble 1.14.3-1build4 amd64
+  Ruby bindings for Apache Subversion
+
+ruby-thrift/noble 0.16.0-2build2 amd64
+  Ruby bindings for Apache Thrift
+
+sbt-ivy/noble 2.4.0~rc1+dfsg-3 all
+  agile dependency manager
+
+shibboleth-sp-common/noble 3.4.1+dfsg-2.1build1 all
+  Federated web single sign-on system (common files)
+
+shibboleth-sp-utils/noble 3.4.1+dfsg-2.1build1 amd64
+  Federated web single sign-on system (daemon and utilities)
+
+slowhttptest/noble 1.9.0-1build2 amd64
+  application layer Denial of Service attacks simulation tool
+
+snoopy/noble 2.5.1-1 amd64
+  execve() wrapper and logger
+
+subversion/noble 1.14.3-1build4 amd64
+  Advanced version control system
+
+subversion-tools/noble 1.14.3-1build4 amd64
+  Assorted tools related to Apache Subversion
+
+sugarplum/noble 0.9.10-18.1 all
+  automated and intelligent spam trap/cache-poisoner
+
+tclws/noble 3.4.0-2 all
+  Tcl Web Services
+
+tirex-example-map/noble 0.7.0-3build3 all
+  Tirex example map data and configuration
+
+tomcat-jakartaee-migration/noble 1.0.7-2 all
+  Apache Tomcat migration tool for Jakarta EE
+
+tomcat10/noble 10.1.16-1 all
+  Apache Tomcat 10 - Servlet and JSP engine
+
+tomcat10-admin/noble 10.1.16-1 all
+  Apache Tomcat 10 - Servlet and JSP engine -- admin web applications
+
+tomcat10-common/noble 10.1.16-1 all
+  Apache Tomcat 10 - Servlet and JSP engine -- common files
+
+tomcat10-docs/noble 10.1.16-1 all
+  Apache Tomcat 10 - Servlet and JSP engine -- documentation
+
+tomcat10-examples/noble 10.1.16-1 all
+  Apache Tomcat 10 - Servlet and JSP engine -- example web applications
+
+tomcat10-user/noble 10.1.16-1 all
+  Apache Tomcat 10 - Servlet and JSP engine -- tools to create user instances
+
+trafficserver/noble 9.2.3+ds-1+deb12u1build4 amd64
+  fast, scalable and extensible HTTP/1.1 and HTTP/2.0 caching proxy server
+
+trafficserver-dev/noble 9.2.3+ds-1+deb12u1build4 amd64
+  Apache Traffic Server Software Developers Kit (SDK)
+
+trafficserver-experimental-plugins/noble 9.2.3+ds-1+deb12u1build4 amd64
+  experimental plugins for Apache Traffic Server
+
+uima-doc/noble 2.10.2-4 all
+  Documentation for the Apache UIMA framework
+
+uima-examples/noble 2.10.2-4 all
+  Examples of UIMA components
+
+uima-utils/noble 2.10.2-4 all
+  UIMA tools
+
+watchcatd/noble 1.2.1-4build2 amd64
+  Process monitoring daemon
+
+webdruid/noble 0.5.4-16build2 amd64
+  Web server log file analysis tool
+
+winpr-utils/noble 2.11.5+dfsg1-1build2 amd64
+  Windows Portable Runtime library command line utilities
+
+winpr3-utils/noble-updates,noble-security 3.5.1+dfsg1-0ubuntu1.1 amd64
+  Windows Portable Runtime library command line utilities
+
+wordpress-plugin-http-authentication/noble 4.6-2 all
+  weblog manager (HTTP Authentication Plugin)
+
+wwwconfig-common/noble 0.3.0.1 all
+  Debian web auto configuration
+
+x2gobroker-wsgi/noble 0.0.4.3-4 all
+  X2Go Session Broker (WSGI)
+
+xalan/noble 1.12-7.1build2 amd64
+  XSLT processor utility
+
+xml-security-c-utils/noble 2.0.4-2build2 amd64
+  C++ library for XML Digital Signatures (utilities)
+
+yasat/noble 848-1.2 all
+  simple stupid audit tool
+
+zktop/noble 1.0.0-4 all
+  top for Apache ZooKeeper
+

@@ -1,0 +1,13 @@
+The Apache Server is hosted in /var/www/html
+
+You can add the application folder in this directory. 
+
+To access the application you need to add that folder in the API calls.
+
+https://greatsky.ddns.net/app 
+
+You can access a example of art.odicforcesounds.com domain
+
+https://greatsky.ddns.net/Art/
+
+Keep in Touch

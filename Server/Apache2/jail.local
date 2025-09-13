@@ -1,0 +1,68 @@
+[DEFAULT]
+port = 0:65535
+filter = %(__name__)s
+
+[sshd]
+enabled = true
+# To use more aggressive sshd modes set filter parameter "mode" in jail.local:
+# normal (default), ddos, extra or aggressive (combines all).
+# See "tests/files/logs/sshd" or "filter.d/sshd.conf" for usage example and details.
+mode   = normal
+port    = ssh
+logpath = %(sshd_log)s
+backend = %(sshd_backend)s
+bantime = -1
+maxretry=1
+
+# Apache : HTTP / SSL Monitor
+
+# detect password authentication failures
+[apache]
+enabled  = true
+port     = http,https
+filter   = apache-auth
+logpath  = /var/log/apache*/*error.log
+maxretry = 6
+
+# detect potential search for exploits and php vulnerabilities
+[apache-noscript]
+enabled  = true
+port     = http,https
+filter   = apache-noscript
+logpath  = /var/log/apache*/*error.log
+maxretry = 6
+
+# detect Apache overflow attempts
+[apache-overflows]
+enabled  = true
+port     = http,https
+filter   = apache-overflows
+logpath  = /var/log/apache*/*error.log
+maxretry = 2
+
+# detect failures to find a home directory on a server
+[apache-nohome]
+enabled  = true
+port     = http,https
+filter   = apache-nohome
+logpath  = /var/log/apache*/*error.log
+maxretry = 2
+
+[blacklist]
+enabled = true
+logpath  = /var/log/fail2ban.*
+filter = blacklist
+banaction = blacklist
+# action = %(action_)s
+action = %(action_abuseipdb)s[abuseipdb_apikey="adca4253cfd8fda124aaf457b1cb1021d0666e6779165be9da844a2d51c94e03076d1e51ba83d4d6", abuseipdb_category="18"]
+bantime  = -1 ;  forever
+findtime = 31536000   ; 1 year
+maxretry = 2
+action_abuseipdb = abuseipdb
+
+[webexploits]
+enabled  = true
+port     = http,https
+filter   = webexploits
+logpath = %(apache_access_log)s
+maxretry = 3

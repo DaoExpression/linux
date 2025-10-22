@@ -1,0 +1,61 @@
+How to upgrade from one OpenBSD version to another (intern docu)
+--------------------------------------------------
+
+sync the template directory with the files found in the vanilla OpenBSD:
+
+  the following files can just be copied, they don't have local adaptions:
+
+  cp /etc/group template/etc/group
+  cp /etc/moduli template/etc/moduli
+  cp /etc/pf.os template/etc/pf.os
+  cp /etc/login.conf template/etc/login.conf
+  cp /etc/protocols template/etc/protocols
+  cp /etc/services template/etc/services
+  cp /etc/gettytab template/etc/gettytab
+  cp /etc/master.passwd template/etc/master.passwd
+  cp /etc/ssh/sshd_config template/etc/ssh/sshd_config
+  cp /etc/termcap template/etc/termcap
+  
+  the following files are customized, so adapt them by hand if concepts
+  change upstream:
+  
+  template/etc/boot.conf
+  template/etc/syslog.conf
+  template/etc/fstab
+  template/etc/tabs/root
+  template/etc/passwd
+    cp /etc/passwd template/etc/passwd
+    adapt to keep the root entry and set it to the password you like
+  template/etc/rc
+  template/etc/ttys
+    cp /etc/ttys template/etc/ttys
+    keep the adapted tty00 entry instead of the vanilla one
+    
+sync config directories
+
+  cp /etc/networks config/xxx/networks
+  for other configs sync it and keep your local networks there
+  /etc/joe copy and adapt, keep it as minimal as you like
+  
+those configs are really yours, sync them also with new concepts from upstream
+
+  config/xxx/dhclient.conf
+  config/xxx/rc.services  
+  config/xxx/nsd-xxx
+  config/xxx/relayd.conf
+  config/xxx/resolv.conf
+  config/xxx/newsyslog.conf
+ 
+build the image
+
+  ./build.sh xxx xxx
+  
+mount it and test it in the chroot
+
+  vnconfig vnd0 xxx.img
+  mount /dev/vnd0a /mnt/fw
+  chroot /mnt/fw
+
+you cannot test the router and the config itself, but at least
+you can test in the chroot whether all binaries have their corresponding
+shared libraries and do actually start.

@@ -1,0 +1,22 @@
+- fsck should run maybe on startup, at least if we have errors, otherwise
+  the 'rw' alias will fail
+- VPN with wireguard
+- strip from debugging symbols binaries and libraries
+- install a customized/optimized kernel (currently we take the one
+  from the master/builder)
+- possibility to set root password, for now we copy the one
+  from the builder/master
+- minimize and check permissions. passwd and group entires
+- local logging and/or remote logging to monitoring station?
+- sensors
+- SNMP
+- /etc/named
+- sshd
+  - which key to use for sshd? ssh_host_rsa_key is commented out in 5.9
+- /etc/moduli: should it be generated for every new installation?
+- dead relayd, no clue why
+- dead sshd: UVM: pid PPPP (login_passwd), uid 0 killed: out of swap
+  https://www.mail-archive.com/arm@openbsd.org/msg02168.html
+  https://www.mail-archive.com/arm@openbsd.org/msg02144.html
+  https://www.mail-archive.com/arm@openbsd.org/msg02145.html
+  or we simply don't have enough RAM on the Alix to run it?

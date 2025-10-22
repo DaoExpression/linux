@@ -1,0 +1,23 @@
+# global
+browser w3m
+show-read-feeds yes
+# colors
+color background  white black
+color listnormal  white black 
+color listfocus   red   black 
+color listnormal_unread green black
+color listfocus_unread red black 
+color title cyan black
+color info blue black 
+color hint-key white black 
+color article white black
+# unbind keys
+unbind-key j
+unbind-key k
+# bind keys 
+bind-key j down
+bind-key k up
+# highlights
+highlight article "^(Title):.*$" blue default
+highlight article "https?://[^ ]+" red default
+highlight article "\\[image\\ [0-9]+\\]" green default

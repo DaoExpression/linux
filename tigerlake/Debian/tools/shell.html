@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex, nofollow">
+<title>Hardened Debian + Apache — build, harden, verify</title>
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#111721; --bg3:#0f1520; --panel:#131b26;
+  --line:#222f3f; --line2:#2c3d52;
+  --fg:#d7e2ee; --fg-dim:#93a4b8; --fg-mute:#6c7f95;
+  --accent:#4fd1c5; --accent2:#7cc4ff; --warn:#e3b341; --bad:#ff7b72; --good:#7ee787;
+  --k:#8dc9ff; --c:#5d7387; --ann:#e3b341; --v:#c8d6e5;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Inter,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font:15px/1.62 var(--sans);
+     -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+a{color:var(--accent2);text-decoration:none}
+a:hover{text-decoration:underline}
+code,pre,kbd{font-family:var(--mono);font-size:12.6px}
+hr{border:0;border-top:1px solid var(--line);margin:26px 0}
+
+.layout{display:grid;grid-template-columns:302px minmax(0,1fr);min-height:100vh}
+@media(min-width:1240px){.layout{grid-template-columns:302px minmax(0,1fr) 236px}}
+@media(max-width:900px){.layout{grid-template-columns:1fr}}
+
+/* ---------- sidebar ---------- */
+.sidebar{background:var(--bg2);border-right:1px solid var(--line);padding:16px 14px;
+         position:sticky;top:0;height:100vh;overflow:auto}
+@media(max-width:900px){.sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}}
+.brand{font-weight:650;font-size:15px;letter-spacing:.2px;margin:2px 0 2px}
+.brand small{display:block;font-weight:400;color:var(--fg-mute);font-size:11.5px;margin-top:3px}
+.searchwrap{position:relative;margin:14px 0 12px}
+#q{width:100%;background:var(--bg3);border:1px solid var(--line2);color:var(--fg);
+   border-radius:8px;padding:8px 10px;font:13px var(--sans);outline:none}
+#q:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,209,197,.13)}
+.searchwrap kbd{position:absolute;right:8px;top:7px;color:var(--fg-mute);
+   border:1px solid var(--line2);border-radius:4px;padding:0 5px;font-size:11px;background:var(--bg2)}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav .grp{color:var(--fg-mute);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;
+          margin:15px 6px 5px;font-weight:600}
+.nav a{display:block;padding:6px 9px;border-radius:7px;color:var(--fg);font-size:13.4px}
+.nav a:hover{background:var(--bg3);text-decoration:none}
+.nav a.active{background:linear-gradient(90deg,rgba(79,209,197,.14),rgba(79,209,197,.02));
+              color:var(--accent);box-shadow:inset 2px 0 0 var(--accent)}
+.nav a .n{color:var(--fg-mute);font-variant-numeric:tabular-nums;margin-right:7px;font-size:12px}
+.nav a.hidden{display:none}
+.stats{color:var(--fg-mute);font-size:11.3px;margin-top:18px;border-top:1px solid var(--line);
+       padding-top:11px;line-height:1.75}
+
+/* ---------- main ---------- */
+main{padding:30px 40px 90px;min-width:0}
+@media(max-width:900px){main{padding:20px 16px 70px}}
+.crumb{color:var(--fg-mute);font-size:12px;margin-bottom:6px}
+h1,h2,h3,h4,h5,h6{line-height:1.28;font-weight:640;scroll-margin-top:16px}
+h1{font-size:27px;margin:6px 0 14px}
+h2{font-size:20.5px;margin:38px 0 12px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+h3{font-size:16.6px;margin:26px 0 9px;color:var(--accent2)}
+h4{font-size:14.6px;margin:20px 0 7px;color:var(--fg-dim)}
+p{margin:11px 0}
+ul,ol{margin:11px 0;padding-left:23px}
+li{margin:4px 0}
+blockquote{margin:14px 0;padding:10px 15px;border-left:3px solid var(--warn);
+           background:rgba(227,179,65,.06);border-radius:0 7px 7px 0}
+blockquote p:first-child{margin-top:0}blockquote p:last-child{margin-bottom:0}
+.anchor{opacity:0;margin-left:8px;color:var(--fg-mute);font-weight:400}
+h1:hover .anchor,h2:hover .anchor,h3:hover .anchor{opacity:.7}
+.cb{color:var(--fg-dim)}
+.cb.done{color:var(--good)}
+.tw{overflow:auto;margin:15px 0;border:1px solid var(--line);border-radius:9px}
+table{border-collapse:collapse;width:100%;font-size:13.2px}
+th,td{padding:8px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--bg3);color:var(--accent);font-weight:600;font-size:12.4px;
+   letter-spacing:.02em;position:sticky;top:0}
+tbody tr:hover{background:rgba(124,196,255,.045)}
+tbody tr:last-child td{border-bottom:0}
+p code,li code,td code,th code{background:var(--bg3);border:1px solid var(--line);
+   border-radius:5px;padding:1px 5px;color:#bfe3ff}
+.cb-wrap{margin:14px 0}
+pre.code{background:var(--bg3);border:1px solid var(--line);border-left:3px solid var(--line2);
+   border-radius:9px;padding:13px 15px;overflow:auto;margin:0;color:#cfe0f0}
+pre.code code{white-space:pre}
+details.filecard{border:1px solid var(--line);border-radius:10px;margin:13px 0;background:var(--panel)}
+details.filecard>summary{cursor:pointer;padding:11px 14px;display:flex;gap:10px;align-items:baseline;
+   flex-wrap:wrap;list-style:none}
+details.filecard>summary::-webkit-details-marker{display:none}
+details.filecard>summary::before{content:"▸";color:var(--accent);font-size:12px;transition:transform .12s}
+details.filecard[open]>summary::before{transform:rotate(90deg)}
+details.filecard[open]>summary{border-bottom:1px solid var(--line)}
+.fp{font-family:var(--mono);font-size:12.6px;color:var(--accent2)}
+.fm{color:var(--fg-mute);font-size:11.6px;margin-left:auto;white-space:nowrap}
+.fpurp{color:var(--fg-dim);font-size:12.7px;padding:9px 14px 0;max-width:105ch}
+.filecard .body{padding:0}
+pre.cfg{background:var(--bg3);margin:0;padding:12px 0;overflow:auto;white-space:pre-wrap;
+   word-break:break-word;border-radius:0 0 9px 9px}
+pre.cfg .row{display:block;padding:0 13px}
+pre.cfg .row:hover{background:rgba(124,196,255,.05)}
+pre.cfg .ln{display:inline-block;width:3.6em;color:#41576e;text-align:right;margin-right:11px;
+   user-select:none;-webkit-user-select:none}
+pre.cfg .c{color:var(--c)}
+pre.cfg .kk{color:var(--k)}
+pre.cfg .vv{color:var(--v)}
+pre.cfg .ann{color:var(--ann);font-style:italic}
+pre.cfg .ann::before{content:" ⟵ ";opacity:.75}
+pre.cfg .row.hl{background:rgba(227,179,65,.14);outline:1px solid rgba(227,179,65,.3)}
+body.hideann pre.cfg .ann{display:none}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 13px;
+   border-bottom:1px solid var(--line);background:var(--bg2)}
+.toolbar .sp{flex:1}
+button.tb{background:var(--bg3);border:1px solid var(--line2);color:var(--fg);border-radius:7px;
+   padding:5px 10px;font:12.3px var(--sans);cursor:pointer}
+button.tb:hover{border-color:var(--accent);color:var(--accent)}
+button.tb.on{background:rgba(79,209,197,.14);border-color:var(--accent);color:var(--accent)}
+.toc-aside{position:sticky;top:0;max-height:100vh;overflow:auto;padding:32px 18px 40px 6px;
+   border-left:1px solid var(--line);font-size:12.7px}
+@media(max-width:1239px){.toc-aside{display:none}}
+.toc-aside .grp{color:var(--fg-mute);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;
+   font-weight:600;margin-bottom:8px}
+.toc-aside a{display:block;color:var(--fg-dim);padding:2.5px 0;line-height:1.45}
+.toc-aside a:hover{color:var(--accent)}
+.toc-aside a.l3{padding-left:11px}
+.toc-aside a.l4{padding-left:22px;font-size:12.2px}
+.card{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:14px 0;background:var(--panel)}
+.card h3{margin-top:0}
+.pill{display:inline-block;border:1px solid var(--line2);border-radius:99px;padding:1px 9px;
+   font-size:11.4px;color:var(--fg-dim);margin:0 5px 5px 0}
+.pill.t1{color:#8ad6a2;border-color:#2f6b45}
+.pill.t2{color:var(--accent);border-color:#2b6f68}
+.pill.t3{color:var(--warn);border-color:#7a6320}
+.hits{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:12px 0}
+.hit{padding:9px 13px;border-bottom:1px solid var(--line);font-size:13px}
+.hit:last-child{border-bottom:0}
+.hit .where{font-family:var(--mono);font-size:12px;color:var(--accent2)}
+.hit .snippet{color:var(--fg-dim);font-family:var(--mono);font-size:12.2px;margin-top:3px;
+   white-space:pre-wrap;word-break:break-word}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(258px,1fr));gap:13px;margin:16px 0}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 15px}
+.stat .big{font-size:23px;font-weight:650;color:var(--accent);font-variant-numeric:tabular-nums}
+.stat .lbl{color:var(--fg-mute);font-size:11.6px;text-transform:uppercase;letter-spacing:.1em;margin-top:3px}
+.note{border-left:3px solid var(--warn);background:rgba(227,179,65,.06);padding:10px 14px;
+   border-radius:0 8px 8px 0;margin:14px 0;font-size:13.4px}
+.error{border-left:3px solid var(--bad);background:rgba(255,123,114,.08);padding:10px 14px;
+   border-radius:0 8px 8px 0;margin:14px 0;font-size:13.4px}
+.nolit{color:var(--fg-dim);border-bottom:1px dotted var(--line2);cursor:help}
+.legend{color:var(--fg-mute);font-size:12.4px;margin:10px 0 0}
+.foot{color:var(--fg-mute);font-size:11.8px;margin-top:46px;border-top:1px solid var(--line);padding-top:14px}
+@media print{
+  .sidebar,.toc-aside,.toolbar{display:none!important}
+  body{background:#fff;color:#000}.layout{display:block}main{padding:0}
+  pre.cfg,pre.code{background:#f6f8fa;border-color:#ccc;color:#111}
+  pre.cfg .ann{color:#8a6d00}a{color:#0645ad}
+}
+</style>
+</head>
+<body class="hideann">
+<noscript><div class="error">This page renders its content with JavaScript (it must: a browser cannot
+read local files from a <code>file://</code> document). The Markdown sources are in
+<code>docs/</code> and the configuration artefacts in <code>files/</code>.</div></noscript>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">Hardened Debian + Apache
+      <small>single-purpose HTTPS server · build, harden, verify</small>
+    </div>
+    <div class="searchwrap">
+      <input id="q" type="search" placeholder="Search docs &amp; config files…" autocomplete="off" spellcheck="false">
+      <kbd>/</kbd>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="stats">
+      __DOC_COUNT__ documents · __FILE_COUNT__ artefacts<br>
+      __LINE_COUNT__ lines embedded<br>
+      __ANN_COUNT__ security annotations<br>
+      <span style="opacity:.7">__GEN__ · self-contained, offline</span>
+    </div>
+  </aside>
+
+  <main id="view" tabindex="-1"></main>
+
+  <aside class="toc-aside" id="toc"></aside>
+</div>
+
+<script>
+const DATA = /*__PAYLOAD__*/;
+
+/* ------------------------------------------------------------------ state */
+const state = {
+  // Annotations are ON by default: they are the reason this page exists. '0' in localStorage
+  // (set by pressing the toggle) is the only thing that turns them off, and that choice sticks.
+  ann: localStorage.getItem('ann') !== '0',
+  expanded: false
+};
+document.body.classList.toggle('hideann', !state.ann);
+
+const $  = (s, r) => (r || document).querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const enc = p => p.split('/').map(encodeURIComponent).join('/');
+
+/* ------------------------------------------------------- config rendering */
+function lineKind(path){
+  if (path.startsWith('etc/apt/')) return '//';
+  if (path.endsWith('ima-policy') || path.endsWith('kernel/cmdline')) return '\u0000';
+  return '#';
+}
+function renderConfig(path){
+  const a = DATA.artefacts[path];
+  if (!a) return '<div class="error">Unknown artefact: ' + esc(path) + '</div>';
+  const pref = lineKind(path);
+  const notes = new Map(a.notes.map(n => [n.n, n.why]));
+  const lines = a.content.split('\n');
+  const out = [];
+  for (let i = 0; i < lines.length; i++){
+    const raw = lines[i];
+    const trimmed = raw.trim();
+    let cls = '', body;
+    if (trimmed && pref !== '\u0000' && trimmed.startsWith(pref)){
+      cls = 'c'; body = esc(raw);
+    } else {
+      // key/value split for the first token so directives stand out
+      const m = raw.match(/^(\s*)([A-Za-z0-9_@.\-\/\[\]]+)([\s=:])/);
+      if (m && !raw.startsWith('#') && !raw.startsWith('//')){
+        body = esc(m[1]) + '<span class="kk">' + esc(m[2]) + '</span>' + esc(raw.slice(m[1].length + m[2].length));
+      } else {
+        body = esc(raw);
+      }
+    }
+    let ann = '';
+    if (notes.has(i)) ann = '<span class="ann">' + esc(notes.get(i)) + '</span>';
+    out.push('<span class="row" id="L' + (i+1) + '"><span class="ln">' + (i+1) + '</span>' +
+             '<span class="' + cls + '">' + body + '</span>' + ann + '</span>');
+  }
+  return '<pre class="cfg">' + out.join('\n') + '</pre>';
+}
+function fileHeader(path){
+  const a = DATA.artefacts[path];
+  return '<div class="toolbar">' +
+    '<span class="fp">/' + esc(path) + '</span>' +
+    '<span class="pill">' + a.lines + ' lines</span>' +
+    '<span class="pill">' + (a.isDoc ? 'documentation' : a.notes.length + ' security annotations') + '</span>' +
+    '<span class="sp"></span>' +
+    '<button class="tb" data-ann>annotations: ' + (state.ann ? 'on' : 'off') + '</button>' +
+    '<button class="tb" data-copy="' + esc(path) + '">copy</button>' +
+    '<button class="tb" data-dl="' + esc(path) + '">download</button>' +
+    '</div>';
+}
+function fileBlock(path, opts){
+  const a = DATA.artefacts[path];
+  if (!a) return '';
+  const o = opts || {};
+  return '<details class="filecard"' + (o.open ? ' open' : '') + ' data-path="' + esc(path) + '">' +
+    '<summary><span class="fp">' + esc(path) + '</span>' +
+      '<span class="fm">' + a.lines + ' lines · ' +
+      (a.isDoc ? 'documentation' : a.notes.length + ' notes') + '</span></summary>' +
+    (a.purpose ? '<div class="fpurp">' + esc(a.purpose) + '</div>' : '') +
+    '<div class="body" data-render="' + esc(path) + '"></div></details>';
+}
+function hydrate(root){
+  root.querySelectorAll('[data-render]').forEach(el => {
+    if (el.dataset.done) return;
+    el.innerHTML = '<div class="toolbar">' +
+        '<button class="tb" data-ann>annotations: ' + (state.ann ? 'on' : 'off') + '</button>' +
+        '<span class="sp"></span>' +
+        '<button class="tb" data-copy="' + esc(el.dataset.render) + '">copy</button>' +
+        '<button class="tb" data-dl="' + esc(el.dataset.render) + '">download</button>' +
+      '</div>' + renderConfig(el.dataset.render);
+    el.dataset.done = '1';
+  });
+}
+
+/* ------------------------------------------------------------- navigation */
+function navHtml(){
+  let h = '<div class="grp">Guide</div>';
+  DATA.pages.forEach((p, i) => {
+    h += '<a href="#/page/' + p.slug + '" data-nav="' + p.slug + '">' +
+         '<span class="n">' + String(i).padStart(2, '0') + '</span>' + p.title.replace(/^\d+ · /, '') + '</a>';
+  });
+  h += '<div class="grp">Reference</div>';
+  h += '<a href="#/files" data-nav="files"><span class="n">A</span>All configuration files</a>';
+  h += '<a href="#/controls" data-nav="controls"><span class="n">B</span>Control matrix (T1–T11)</a>';
+  return h;
+}
+function markActive(key){
+  document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('active', a.dataset.nav === key));
+}
+
+/* ------------------------------------------------------------- rendering */
+function slugFromHash(){
+  const h = location.hash.replace(/^#\/?/, '');
+  const parts = h.split('/');
+  const kind = parts[0] || 'page';
+  let arg = parts.slice(1).join('/');
+  let line = 0;
+  const qi = arg.indexOf('?');
+  if (qi >= 0){
+    const m = arg.slice(qi + 1).match(/(?:^|&)l=(\d+)/);
+    if (m) line = parseInt(m[1], 10) || 0;
+    arg = arg.slice(0, qi);
+  }
+  return { kind, arg: decodeURIComponent(arg), line };
+}
+function render(){
+  const { kind, arg, line } = slugFromHash();
+  const toc = $('#toc');
+  toc.innerHTML = '';
+  if (kind === 'file') return renderFilePage(arg, line);
+  if (kind === 'files') return renderFilesPage();
+  if (kind === 'controls') return renderControls();
+  if (kind === 'search') return renderSearch(arg);
+  return renderDoc(arg || 'README');
+}
+
+function renderDoc(slug){
+  const page = DATA.pages.find(p => p.slug === slug) || DATA.pages[0];
+  const view = $('#view');
+  let filesHtml = '';
+  if (page.files.length){
+    filesHtml = '<h2 id="artefacts">Configuration files for this chapter<a class="anchor" href="#artefacts">#</a></h2>' +
+      '<p class="legend">These are the exact files installed by <code>scripts/install-hardening.sh</code>. ' +
+      'Annotations (<em>⟵ why this matters</em>) explain the security property each option buys; ' +
+      'toggle them off to see the file exactly as it exists on disk.</p>' +
+      '<div class="toolbar"><button class="tb" data-ann>annotations: ' + (state.ann ? 'on' : 'off') + '</button>' +
+      '<button class="tb" id="expandAll">expand all</button>' +
+      '<span class="sp"></span><span class="pill">' + page.files.length + ' files</span></div>' +
+      page.files.map(f => fileBlock(f)).join('');
+  }
+  view.innerHTML = '<div class="crumb">Guide · ' + esc(page.title.replace(/<[^>]+>/g,'')) + '</div>' +
+    page.html + filesHtml +
+    '<div class="foot">Generated from <code>' + esc(DATA.generated) + '</code>. ' +
+    'The page is self-contained and works offline.</div>';
+  markActive(page.slug);
+  // Eager: fill every file card now rather than on first expand. The content is static and the
+  // whole document is ~0.5 MiB, so this costs nothing - and it means the cards are present for
+  // Ctrl+P, browser find (Ctrl+F) and copy/paste, which lazy rendering would silently break.
+  hydrate(view);
+  buildToc(page, view);
+  view.scrollTop = 0;
+  window.scrollTo(0, 0);
+  document.title = page.title.replace(/<[^>]+>/g,'') + ' — Hardened Debian + Apache';
+}
+
+function buildToc(page, view){
+  const toc = $('#toc');
+  const items = page.toc.filter(t => t.lvl === 2 || t.lvl === 3);
+  let h = '<div class="grp">On this page</div>';
+  items.forEach(t => { h += '<a class="l' + t.lvl + '" href="#' + t.id + '">' + esc(t.text) + '</a>'; });
+  if (page.files.length) h += '<div class="grp" style="margin-top:14px">Artefacts</div><a href="#artefacts">' + page.files.length + ' files in this chapter</a>';
+  toc.innerHTML = h;
+  toc.querySelectorAll('a').forEach(a => a.addEventListener('click', ev => {
+    const id = a.getAttribute('href').slice(1);
+    const t = view.querySelector('#' + CSS.escape(id));
+    if (t){ ev.preventDefault(); t.scrollIntoView({behavior:'smooth', block:'start'}); }
+  }));
+}
+
+function renderFilePage(path, line){
+  const a = DATA.artefacts[path];
+  const view = $('#view');
+  if (!a){ view.innerHTML = '<div class="error">No such artefact: ' + esc(path) + '</div>'; return; }
+  view.innerHTML = '<div class="crumb">Artefacts · <span class="fp">' + esc(path) + '</span></div>' +
+    '<h1 style="font-family:var(--mono);font-size:20px">' + esc(path.split('/').pop()) + '</h1>' +
+    (a.purpose ? '<p style="max-width:100ch">' + esc(a.purpose) + '</p>' : '') +
+    fileHeader(path) + renderConfig(path) +
+    chapterLinks(path);
+  markActive('');
+  document.title = path + ' — Hardened Debian + Apache';
+  if (line > 0){
+    const row = view.querySelector('#L' + line);
+    if (row){ row.classList.add('hl'); row.scrollIntoView({block:'center'}); }
+  }
+}
+function chapterLinks(path){
+  const pages = DATA.pages.filter(p => p.files.includes(path)).map(p => p.slug);
+  if (!pages.length) return '';
+  return '<div class="legend">Referenced by: ' + pages.map(s => {
+    const t = DATA.pages.find(p => p.slug === s).title.replace(/<[^>]+>/g,'');
+    return '<a href="#/page/' + s + '">' + esc(t) + '</a>';
+  }).join(' · ') + '</div>';
+}
+
+function renderFilesPage(){
+  const view = $('#view');
+  let h = '<div class="crumb">Reference A</div><h1>All configuration files</h1>' +
+    '<p>Every artefact in <code>files/</code>, grouped by purpose. Each entry opens with the file ' +
+    'exactly as it will be installed, plus an inline explanation of why each effective option ' +
+    'raises the security bar.</p>';
+  DATA.appendix.forEach(g => {
+    h += '<h2 id="' + esc(g.title.replace(/[^a-z0-9]+/gi,'-').toLowerCase()) + '">' + esc(g.title) +
+         ' <span class="pill">' + g.files.length + '</span></h2>';
+    h += '<div class="cb-wrap"><pre class="code"><code>' +
+         g.files.map(f => '<a href="#/file/' + enc(f) + '">' + esc(f) + '</a>').join('\n') +
+         '</code></pre></div>';
+  });
+  view.innerHTML = h;
+  markActive('files');
+}
+function renderControls(){
+  const view = $('#view');
+  let h = '<div class="crumb">Reference B</div><h1>Control matrix</h1>' +
+    '<p>Threat to control to artefact to the command that proves it. If a row cannot be ' +
+    'demonstrated with its command, the control is not in place — that is the whole idea.</p>' +
+    '<div class="tw"><table><thead><tr><th>Threat</th><th>Primary controls</th>' +
+    '<th>Artefact</th><th>Verify</th></tr></thead><tbody>';
+  DATA.controls.forEach(r => {
+    h += '<tr><td><strong>' + esc(r[0]) + '</strong></td><td>' + esc(r[1]) + '</td>' +
+         '<td>' + esc(r[2]) + '</td><td><code>' + esc(r[3]) + '</code></td></tr>';
+  });
+  h += '</tbody></table></div>';
+  view.innerHTML = h;
+  markActive('controls');
+}
+
+function search(q){
+  q = q.toLowerCase().trim();
+  if (q.length < 2) return { pages: [], files: [] };
+  const pages = DATA.pages.filter(p =>
+    p.title.toLowerCase().includes(q) || p.html.toLowerCase().includes(q));
+  const files = [];
+  Object.values(DATA.artefacts).forEach(a => {
+    if (a.path.toLowerCase().includes(q)){ files.push({path:a.path, hit:'filename', line:0}); return; }
+    const lines = a.content.toLowerCase().split('\n');
+    for (let i = 0; i < lines.length && files.length < 400; i++){
+      if (lines[i].includes(q)){ files.push({path:a.path, hit:lines[i].trim().slice(0,160), line:i+1}); break; }
+    }
+  });
+  return { pages, files };
+}
+function renderSearch(q){
+  const view = $('#view');
+  const r = search(q);
+  let h = '<div class="crumb">Search</div><h1>Results for “' + esc(q) + '”</h1>';
+  if (!r.pages.length && !r.files.length) h += '<div class="note">Nothing matched.</div>';
+  if (r.pages.length){
+    h += '<h2>' + r.pages.length + ' chapter(s)</h2><div class="hits">';
+    r.pages.forEach(p => {
+      h += '<div class="hit"><a class="where" href="#/page/' + p.slug + '">' + p.title.replace(/<[^>]+>/g,'') + '</a></div>';
+    });
+    h += '</div>';
+  }
+  if (r.files.length){
+    h += '<h2>' + r.files.length + ' configuration file(s)</h2><div class="hits">';
+    r.files.forEach(f => {
+      h += '<div class="hit"><a class="where" href="#/file/' + enc(f.path) + (f.line ? '?l=' + f.line : '') + '">' +
+           esc(f.path) + (f.line ? ':' + f.line : '') + '</a>' +
+           (f.line ? '<div class="snippet">' + esc(f.hit) + '</div>' : '') + '</div>';
+    });
+    h += '</div>';
+  }
+  view.innerHTML = h;
+  markActive('');
+}
+
+/* ---------------------------------------------------------------- events */
+document.addEventListener('click', e => {
+  const annBtn = e.target.closest('[data-ann]');
+  if (annBtn){
+    state.ann = !state.ann;
+    localStorage.setItem('ann', state.ann ? '1' : '0');
+    document.body.classList.toggle('hideann', !state.ann);
+    document.querySelectorAll('[data-ann]').forEach(b => {
+      b.textContent = 'annotations: ' + (state.ann ? 'on' : 'off');
+      b.classList.toggle('on', state.ann);
+    });
+    return;
+  }
+  const copy = e.target.closest('[data-copy]');
+  if (copy){
+    const text = DATA.artefacts[copy.dataset.copy].content;
+    const done = () => { copy.textContent = 'copied'; setTimeout(() => copy.textContent = 'copy', 1200); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, done);
+    else { const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select();
+           document.execCommand('copy'); t.remove(); done(); }
+    return;
+  }
+  const dl = e.target.closest('[data-dl]');
+  if (dl){
+    const path = dl.dataset.dl, a = DATA.artefacts[path];
+    const url = URL.createObjectURL(new Blob([a.content], {type:'text/plain'}));
+    const link = document.createElement('a');
+    link.href = url; link.download = path.split('/').pop(); link.click();
+    URL.revokeObjectURL(url);
+    return;
+  }
+  if (e.target.id === 'expandAll'){
+    const open = !state.expanded;
+    state.expanded = open;
+    document.querySelectorAll('details.filecard').forEach(d => { d.open = open; });
+    e.target.textContent = open ? 'collapse all' : 'expand all';
+    if (open) hydrate(document);
+    return;
+  }
+});
+document.addEventListener('toggle', e => {
+  if (e.target.matches('details.filecard[open]')) hydrate(e.target);
+}, true);
+
+$('#q').addEventListener('input', e => {
+  // Live filtering of the sidebar only. Searching file CONTENTS happens on Enter, so typing in the
+  // box never yanks the reading pane out from under you.
+  const q = e.target.value.trim().toLowerCase();
+  document.querySelectorAll('.nav a').forEach(a => {
+    a.classList.toggle('hidden', q.length > 0 && !a.textContent.toLowerCase().includes(q));
+  });
+});
+$('#q').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.value.trim().length >= 2){
+    location.hash = '#/search/' + encodeURIComponent(e.target.value.trim());
+  }
+  if (e.key === 'Escape'){
+    e.target.value = '';
+    document.querySelectorAll('.nav a').forEach(a => a.classList.remove('hidden'));
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === '/' && document.activeElement !== $('#q')){ e.preventDefault(); $('#q').focus(); }
+});
+window.addEventListener('hashchange', render);
+
+/* ------------------------------------------------------------------- boot */
+$('#nav').innerHTML = navHtml();
+render();
+if (!location.hash) location.hash = '#/page/README';
+</script>
+</body>
+</html>

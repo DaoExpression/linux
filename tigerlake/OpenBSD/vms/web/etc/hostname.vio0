@@ -1,0 +1,10 @@
+#	web — HTTP backend for relayd, 10.10.40.20 on the dmz segment.
+#
+#	Nothing here is reachable from the internet directly: the gateway's pf.conf
+#	does not publish this address, and relayd(8) proxies to it.  The only
+#	inbound connections are relayd (port 8080) and ssh from SRV/MGMT.
+inet 10.10.40.20 255.255.255.0 10.10.40.255
+inet6 fd00:10:10:40::20 64
+!route add default 10.10.40.1
+!route add -inet6 default fd00:10:10:40::1
+up

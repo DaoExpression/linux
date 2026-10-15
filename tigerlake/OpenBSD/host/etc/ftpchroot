@@ -1,0 +1,28 @@
+#	/etc/ftpchroot — users confined to their home directory by ftpd(8)
+#
+#	Referenced because /etc/inetd.conf starts ftpd with -a.  Format is one
+#	set of user/group/network patterns per line, with optional options;
+#	see ftpchroot(5).
+#
+#	The anonymous/mirror account below is the one that serves the OpenBSD
+#	install sets, so it is chrooted and cannot see anything outside /var/ftp.
+
+# anonymous and the ftp account are always chrooted by ftpd(8) automatically;
+# listing them here is harmless and documents intent.
+anonymous
+ftp
+
+# --- the mirror account -------------------------------------------------------
+# A real account (not "ftp") used by the set-mirror script to publish /pub.
+# Chroot it too, so that a bug in the upload path cannot expose /etc.
+mirror
+
+# --- local users --------------------------------------------------------------
+# Any other authenticated user is chrooted to their home directory.
+# Uncomment to jail every non-anonymous login:
+#	@*
+
+# --- class-based examples -----------------------------------------------------
+# "@lab" would match everyone in the login class "lab"; "192.168.0.0/16" would
+# apply to clients from that network.  Not used here — the lab has exactly one
+# ftp consumer (the set mirror) and it is listed above.

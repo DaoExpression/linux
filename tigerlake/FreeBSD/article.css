@@ -1,0 +1,57 @@
+/* article.css — mandatory styles for INSTALL-GUIDE.html
+   Do not substitute these values; extra styles live in the HTML <style>. */
+
+:root {
+  --ink: #1d232b;
+  --paper: #fdfdfb;
+  --accent: #a02b20;
+  --soft: #6b7480;
+  --line: #c9c3b8;
+}
+
+body {
+  font-family: Georgia, "Times New Roman", serif;
+  color: var(--ink);
+  background: var(--paper);
+  max-width: 66em;
+  margin: 2em auto;
+  line-height: 1.7;
+  padding: 0 1.2em;
+}
+
+h1 { font-size: 1.9em; border-bottom: 3px double var(--line); padding-bottom: .3em; }
+h2 { font-size: 1.45em; border-bottom: 1px solid var(--line); margin-top: 2.6em; padding-bottom: .2em; }
+h3 { font-size: 1.15em; margin-top: 1.6em; color: var(--accent); }
+h4 { font-size: 1.02em; margin-top: 1.2em; }
+
+/* --- semantic content classes --------------------------------------- */
+.feature strong { font-weight: 700; }          /* features: bold */
+.opt { font-style: italic; color: var(--soft); }  /* options: italic */
+.tip, u { text-decoration: underline; text-decoration-color: var(--accent);
+         text-underline-offset: 3px; }        /* tips: underlined */
+.tip { font-style: normal; }
+
+code { font-family: "DejaVu Sans Mono", Menlo, Consolas, monospace;
+       font-size: .92em; background: #f1efe9; padding: 0 .3em; }
+pre { background: #f6f5f0; border: 1px solid var(--line); padding: .9em;
+      overflow-x: auto; font-size: .88em; line-height: 1.45; }
+
+a.external { text-decoration: underline; font-weight: 600; }
+a.external::after { content: " ↗"; font-size: .8em; font-weight: 400; }
+
+table { border-collapse: collapse; margin: 1em 0; width: 100%; }
+th, td { border: 1px solid var(--line); padding: .45em .7em; text-align: left; vertical-align: top; }
+th { background: #efece4; }
+
+ul, ol { padding-left: 1.6em; }
+li { margin: .3em 0; }
+
+.warn { background: #fdf3d9; border-left: 5px solid #c98a12; padding: .7em 1em; margin: 1.2em 0; }
+.ok   { background: #e9f3ea; border-left: 5px solid #3d7a44; padding: .7em 1em; margin: 1.2em 0; }
+.next { background: #e9eef7; border-left: 5px solid #2e5fa3; padding: .7em 1em; margin: 1.2em 0; }
+
+nav a { text-decoration: none; color: var(--ink); border-bottom: 1px dotted var(--soft); }
+nav a:hover { color: var(--accent); }
+.stepnum { font-weight: 700; color: var(--accent); }
+.filetag { font-family: "DejaVu Sans Mono", Menlo, monospace; font-size: .8em;
+           background: #ece9e0; padding: .1em .5em; border-radius: 3px; }

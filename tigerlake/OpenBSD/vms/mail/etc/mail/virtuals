@@ -1,0 +1,40 @@
+#	/etc/mail/virtuals — mail guest
+#
+#	Referenced from smtpd.conf as:  table virtuals file:/etc/mail/virtuals
+#	and used by the inbound action ("virtual <virtuals>").
+#
+#	Format (table(5), "virtual" mapping): left-hand side is the address mail
+#	was sent to, right-hand side is the local address it becomes.  Values are
+#	expanded before delivery, so a value that is itself an alias in
+#	/etc/mail/aliases will be expanded again by that table.
+#
+#	Reload after editing:  rcctl reload smtpd
+#	Test by sending a message to the mapped address and watching
+#	/var/log/maillog on this guest.
+
+# --- catch-all -----------------------------------------------------------------
+# Everything sent to the domain reaches the admin mailbox unless a more
+# specific line below says otherwise.  Order in a file-backed table does not
+# matter; smtpd picks the most specific match.
+@lab.example.org	admin@lab.example.org
+
+# --- role addresses -------------------------------------------------------------
+# These are the addresses that appear in the DNS zone (SPF, DMARC, SOA) and in
+# the CAA record's iodef, so they must exist.
+postmaster@lab.example.org	admin@lab.example.org
+hostmaster@lab.example.org	admin@lab.example.org
+dmarc@lab.example.org		admin@lab.example.org
+abuse@lab.example.org		admin@lab.example.org
+security@lab.example.org	admin@lab.example.org
+
+# --- people ----------------------------------------------------------------------
+# One line per human.  The right-hand side is a real mailbox on this host
+# (dovecot's userdb makes the directory exist on first login).
+admin@lab.example.org		admin@lab.example.org
+
+# --- notes -----------------------------------------------------------------------
+# * Do not map an address to a system account name (/etc/passwd).  Everything
+#   here is a *virtual* mailbox under /var/vmail; that separation is what lets
+#   you rebuild a user without touching the system.
+# * If you add a second domain later, keep it in a separate table file and pass
+#   both to the action: "virtual <virtuals> virtual <virtuals-other>".

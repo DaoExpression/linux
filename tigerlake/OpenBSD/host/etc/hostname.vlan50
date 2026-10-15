@@ -1,0 +1,5 @@
+#	SRV member of veb1 — no address here; the gateway address 10.10.50.1
+#	lives on veb1 (see hostname.veb1) which is also the vmd(8) switch "srv".
+vlan 50 vlandev igc1
+description "srv member -> veb1"
+up

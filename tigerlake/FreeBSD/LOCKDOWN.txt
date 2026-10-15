@@ -1,0 +1,176 @@
+=============================================================================
+ SYSTEM LOCKDOWN — block changes without admin; secure reboot & single-user
+=============================================================================
+ For: i7-11390H FreeBSD laptop. Complements: SECURITY-LOGS.txt  (§5 tips),
+ PRIVACY.txt (§3 visibility sysctls), CAPABILITIES.txt (§D chflags).
+ This file is about THE OTHER SIDE of desktop privacy: making sure nobody
+ can silently modify what you configured — no root password, no rescue-disk
+ reboot with `init=/bin/sh`-style tricks, no sneaky boot into single-user.
+
+ THREAT MODEL (typical laptop):
+   * Someone at your keyboard while you're logged out or away.
+   * Someone rebooting the machine hoping for single-user-mode root shell.
+   * No physical-lab attacks (chip flash, DMA via Thunderbolt, USB boot
+     with a full-OS image, unsoldering the SSD). Those need real
+     hardware security (BIOS passwords, glued enclosures); FreeBSD can't
+     fix them. Everything below is the realistic software layer.
+
+ -----------------------------------------------------------------------------
+ 1. THE BOOT CHAIN — where protection must start
+ -----------------------------------------------------------------------------
+ FreeBSD boots like this (what you can lock at each stage):
+   (1) firmware/UEFI boot manager
+   (2) loader(8)   [reads /boot/loader.conf, can boot single-user]
+   (3) kernel      [reads /etc/ttys, runs init(8)]
+   (4) multi-user  [what you actually use]
+ Locking = making steps 2-3 unmodifiable and the prompt unreachable.
+
+ -----------------------------------------------------------------------------
+ 2. SINGLE-USER MODE — the classic bypass, and how to close it
+ -----------------------------------------------------------------------------
+ Boot menu → "Boot Single User" drops init into a root shell WITHOUT a
+ password by default, on any machine. Two complementary defenses:
+
+ 2a. Make the console line in /etc/ttys "insecure":
+     # /etc/ttys, the 'console' line:
+       console none unknown safe insecure
+     # BEFORE: "secure"  → init(8) hands out a root shell with no password
+     # AFTER:  "insecure"→ even single-user mode demands the ROOT PASSWORD.
+     Apply without reboot:      doas kill -HUP 1
+     Test it (NEVER skip): reboot, choose "Boot Single User" at the menu,
+     you should see "Give root password for maintenance" and NOT get a shell.
+
+ 2b. PASSWORD-PROTECT THE LOADER (loader.conf(5), syntax verified):
+     In /boot/loader.conf — the password is set directly, in clear text:
+       password="MyLoaderPass"        # protects the BOOT MENU only:
+                                      # autoboot proceeds normally; anyone
+                                      # interrupting the countdown must
+                                      # type this password to reach menu /
+                                      # loader prompt / boot -s
+       # Stronger variant — requires checking-password BEFORE ANY boot:
+       # bootlock_password="MyLoaderPass"
+       # (then in /boot/loader.rc:  check-password   — see check-password(8))
+     Two levels worth knowing (loader.conf(5)):
+       * password="…"          locks the interactive boot menu; autoboot
+                               is untouched — normal boots need nothing.
+       * bootlock_password +   locks EVERY boot, including unattended reboots
+         check-password        and cron-triggered restarts. Use only if the
+                               machine reboots rarely!
+       * autoboot_delay="-1" + beastie_disable="YES" skips the menu
+         entirely (no interruption possible) — but also takes away YOUR
+         ability to pick a boot environment at the menu. Choose wisely:
+         for laptops, password on the menu is usually the right trade.
+
+ -----------------------------------------------------------------------------
+ 3. Make the loader/kernel truly immutable — the reason "just chmod" fails
+ -----------------------------------------------------------------------------
+ Anyone with root can edit /boot/loader.conf back, unless you use
+ filesystem IMMUTABILITY flags (chflags, CAPABILITIES.txt §D):
+     doas chflags schg /boot/loader.conf
+     doas chflags schg /boot/loader.conf.pwd
+     doas chflags schg /etc/ttys
+     doas chflags schg /etc/rc.conf
+     doas chflags schg /etc/pf.conf
+     doas chflags schg /etc/sysctl.conf
+ Check/undo:
+     ls -lo /boot/loader.conf          # shows 'schg' in flags column
+     doas chflags noschg /etc/ttys     # when YOU want to edit again
+ Meanwhile, raise the kernel "securelevel" [section 4], so an attacker
+ who becomes root can't lower these flags while the system is running.
+
+ -----------------------------------------------------------------------------
+ 4. SECURELEVEL — FreeBSD's kernel-wide immutability switch
+ -----------------------------------------------------------------------------
+ init(8) raises the system's securelevel at boot (init: sysctl
+ kern.securelevel; -1 = permanently off, 0..3 increasing restriction).
+ One-shot config:  /etc/rc.conf
+   kern_securelevel_enable="YES"
+   kern_securelevel="1"          # read below for 1 vs 2
+ MAXIMUM SETUP for this laptop (edit /etc/rc.conf):
+   kern_securelevel_enable="YES"
+   kern_securelevel="1"
+ What level 1 gives you (see securelevel(7) for the full list):
+   * the immutable (schg) flag may NOT be cleared, even by root
+   * raw disk devices are write-protected
+   * firewall lists can only grow (block more), not shrink
+   * X server won't be able to write /dev/mem — this is the ONE caveat
+     that matters on a laptop: don't run level 1 until X and everything
+     else you use is confirmed working!
+ What level 2 adds (server-typical): /dev/mem & /dev/kmem read-only;
+   mounting filesystems rw is blocked, + raw disk access only for the
+   running kernel; too disruptive for a normal desktop, perfect for
+   a headless single-purpose box.
+ NOTA BENE: securelevel ONLY protects things while running. It does NOT
+   protect the disk if the attacker removes it and mounts it elsewhere
+   (DEFENSE: full-disk encryption, see CAPABILITIES.txt A5 + §5 below).
+ Live check:
+     sysctl kern.securelevel
+ Raise it NOW (without reboot) — one-way until next reboot:
+     doas sysctl kern.securelevel=1
+
+ HARD REALITY CHECK (worth knowing):
+   * securelevel + schg flags are "advisory" against an attacker with
+     root AND reboot access: at boot, before init raises the level, the
+     flags can be cleared. That's why 2a/2b (loader/ttys) + FDE matter
+     MORE than securelevel as the outer shell.
+
+ -----------------------------------------------------------------------------
+ 5. FULL-DISK ENCRYPTION — the layer that makes everything above moot-proof
+ -----------------------------------------------------------------------------
+ The most robust "nobody modified my system" answer on a laptop:
+   bsdinstall → ZFS install → "Encrypt disks?" → yes (GELI under ZFS) or
+   ZFS native encryption. With FDE:
+     * Pulling the SSD and reading it elsewhere sees only noise.
+     * The loader stage asks for the key BEFORE any kernel runs — the
+       classic "boot a mini-OS from USB and edit files" attack dies here.
+   Post-install check if you already have it: geli status / zfs get
+   encryption zroot.
+
+ -----------------------------------------------------------------------------
+ 6. BLOCK LOGGED-IN NON-ADMIN ATTTEMPTS (desktop reality)
+ -----------------------------------------------------------------------------
+ * Lock the screen — KDE Plasma: Meta+L, i3: bind to i3lock [-> SOFTWARE].
+ * Short idle action: KDE System Settings → Power → auto-lock; or
+   xautolock + i3lock in i3 config:
+     exec xautolock -time 10 -locker 'i3lock -c 000000'
+ * Don't grant doas to anything you don't fully understand;
+   audit quarterly with:  doas less /usr/local/etc/doas.conf
+ * Anyone with physical access + USB boot can switch OSes — FDE + BIOS
+   "boot from USB: disabled + BIOS password" is the hardware-side answer.
+   (BIOS setup: look for "Supervisor Password" / "Secure Boot deny USB").
+ * BIOS/UEFI setup password + disable USB boot, disable "boot other os"
+     option if your UEFI offers it. That is a FIRMWARE menu, not FreeBSD,
+     but 3 clicks and 20 seconds closes half a real attack class.
+
+ -----------------------------------------------------------------------------
+ 7. AUDIT WHO DID WHAT (tie-in with SECURITY-LOGS.txt)
+ -----------------------------------------------------------------------------
+   * last | head       — logins;   lastcomm  — what commands ran
+     (see CAPABILITIES.txt C2: accounting_enable="YES")
+   * /var/log/auth.log — every doas/su event with timestamp + TTY.
+   * Quick monthly check:
+       grep -c 'authentication' /var/log/auth.log
+       last | awk '{print $1}' | sort | uniq -c | sort -rn | head
+   * mtree baseline of /etc + /usr/local/etc (CAPABILITIES.txt B9) catches
+     silent config tampering that flags alone can't (legit-flagged edits).
+
+ -----------------------------------------------------------------------------
+ 8. QUICK CHECKLIST — the 30-second lockdown recipe
+ -----------------------------------------------------------------------------
+   1. /etc/ttys console line → insecure          (doas kill -HUP 1)
+   2. loader.conf password + chflags schg on key configs
+   3. kern_securelevel_enable=YES, kern_securelevel=1 in rc.conf
+      (test X/browsers/doas fully BEFORE you reboot into level 1)
+   4. FDE already on (or switch: bectl + reinstall once — do it NOW,
+      it's painful later).
+   5. BIOS password + disable USB boot.
+   6. i3/xautolock idle lockscreen (§6).
+   7. Monthly: auth.log grep + mtree diff + last/lastcomm review.
+
+ TEST THAT IT WORKS (never trust, always prove):
+   * reboot → boot menu → Single User → demands root password ✓
+   * as root: chflags noschg /etc/rc.conf → fails at level 1 ✓
+   * as user: doas chflags noschg /etc/ttys → ok for you, log record ✓
+=============================================================================
+ END. Level 1 + ttys "insecure" + FDE is the practical ceiling on FreeBSD;
+ beyond that, hardware attacks need hardware answers.

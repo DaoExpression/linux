@@ -1,0 +1,14 @@
+# /etc/systemd/system/paranoid-cert-check.timer
+
+[Unit]
+Description=Daily TLS certificate expiry check
+Documentation=file:///etc/systemd/system/paranoid-cert-check.service
+
+[Timer]
+OnCalendar=*-*-* 06:30:00
+RandomizedDelaySec=15m
+Persistent=true
+Unit=paranoid-cert-check.service
+
+[Install]
+WantedBy=timers.target

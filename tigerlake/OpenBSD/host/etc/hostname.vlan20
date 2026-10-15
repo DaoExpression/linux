@@ -1,0 +1,6 @@
+#	USERS — 10.10.20.0/24, served by dhcpd(8), IPv6 via radvd(8).
+vlan 20 vlandev igc1
+description "users 10.10.20.0/24"
+inet 10.10.20.1 255.255.255.0 10.10.20.255
+inet6 fd00:10:10:20::1 64
+up

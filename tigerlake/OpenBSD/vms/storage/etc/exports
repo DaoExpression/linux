@@ -1,0 +1,43 @@
+#	/etc/exports — storage guest
+#
+#	Apply without restarting anything:
+#	    kill -HUP $(cat /var/run/mountd.pid)      # mountd re-reads this file
+#	    rcctl restart nfsd                        # only if the volumes changed
+#	Inspect what clients see:
+#	    showmount -e 10.10.50.13
+#
+#	excerpt from exports(5): a directory, then options.  Option names below are
+#	the ones that matter operationally; everything else can be looked up.
+#
+#	  -ro            read-only
+#	  -alldirs       clients may mount any subdirectory
+#	  -maproot=user:group  map root from the client to this user/group
+#	                 (never leave root unmapped except where a client
+#	                 genuinely needs to write as root)
+#	  -network/-mask restrict which clients may mount at all
+#	  -noresvport    allow clients to use non-reserved source ports
+#	                 (needed by some clients behind NAT; weakens spoofing
+#	                 protection, so it is not used here)
+
+# --- backups ------------------------------------------------------------------
+# Written by the gateway's lab-backup script and by each guest's own dumps.
+# Root on the client is mapped to a harmless local account, so a compromised
+# guest cannot rewrite the archive as root.  -alldirs lets an operator mount
+# just one host's backup directory.
+/export/backup -alldirs -maproot=backup:wheel -network=10.10.0.0 -mask=255.255.0.0
+
+# --- shared scratch ------------------------------------------------------------
+# Read-write for the SRV and DMZ guests that need a big temporary area; not
+# visible to USERS or GUEST.
+/export/scratch -maproot=nobody:nobody -network=10.10.50.0 -mask=255.255.255.0
+/export/scratch -maproot=nobody:nobody -network=10.10.40.0 -mask=255.255.255.0
+
+# --- the media share ------------------------------------------------------------
+# Anyone in the lab may read it; only the storage guest writes it.  Users
+# mounting this read-only from their workstations is the common case.
+/export/media -ro -network=10.10.0.0 -mask=255.255.0.0
+
+# --- monitoring data ------------------------------------------------------------
+# collectd's RRD and CSV trees live here so that the mon guest can be rebuilt
+# without losing history.  Writable by mon only.
+/export/monitoring -maproot=root:wheel -network=10.10.50.14 -mask=255.255.255.255

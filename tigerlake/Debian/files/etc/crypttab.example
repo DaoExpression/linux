@@ -1,0 +1,26 @@
+# /etc/crypttab  (copy the line that matches your profile; see docs/03 §1)
+#
+# Column 1: mapping name used under /dev/mapper
+# Column 2: the block device (use the PARTUUID for stability)
+# Column 3: key file ('none' = interactive passphrase prompt in initramfs)
+# Column 4: options
+#
+# Validate with:  sudo systemd-cryptsetup-generator --generate-dependencies  (or just reboot)
+
+# ---------------------------------------------------------------------------
+# Profile P1 - embedded LUKS2 header (default, recommended for a laptop)
+# ---------------------------------------------------------------------------
+cryptroot PARTUUID=<your-luks-partition-partuuid> none luks,no-read-workqueue,no-write-workqueue
+
+# Note: NO 'discard' and NO 'tpm2-device=auto' here. See docs/03 §5 for why the firmware TPM on
+# this machine is not trusted for disk unlock, and docs/00 §5 for why TRIM is off.
+
+# ---------------------------------------------------------------------------
+# Profile P2 - detached header on a USB token (docs/03 §4 conversion)
+# Replace the by-id path with YOUR token's stable identifier:  ls -l /dev/disk/by-id/
+# ---------------------------------------------------------------------------
+#cryptroot PARTUUID=<your-luks-partition-partuuid> none luks,header=/dev/disk/by-id/usb-TOKEN_SERIAL-0:0-part1,x-systemd.device-timeout=30s
+
+# The header device is a boot dependency. If it is absent, the boot fails *loudly* at the
+# initramfs prompt - that is the intended behaviour, and docs/10 §6 tells you how to recover
+# with the offline header backup.

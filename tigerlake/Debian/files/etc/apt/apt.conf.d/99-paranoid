@@ -1,0 +1,33 @@
+// /etc/apt/apt.conf.d/99-paranoid
+// Package-manager hardening. See docs/04 §9 and docs/09 §2.
+// Inspect the effective settings with:  apt-config dump | grep -E 'Install-Recommends|Valid-Until'
+
+// --- "install only necessary software", enforced rather than promised ---
+APT::Get::Install-Recommends "false";
+APT::Get::Install-Suggests "false";
+APT::Get::AllowUnauthenticated "false";
+APT::Get::AutomaticRemove "true";
+Binary::apt::APT::Keep-Downloaded-Packages "false";
+
+// --- do not install from a repository whose metadata is stale or unsigned ---
+Acquire::AllowInsecureRepositories "false";
+Acquire::AllowDowngradeToInsecureRepositories "false";
+Acquire::Check-Valid-Until "true";
+Acquire::Max-ValidTime "604800";      // 7 days: refuse metadata older than this
+Acquire::Min-ValidTime "0";
+Acquire::Retries "3";
+Acquire::http::AllowRedirect "false";
+Acquire::https::Verify-Peer "true";
+Acquire::https::Verify-Host "true";
+Acquire::https::CaInfo "/etc/ssl/certs/ca-certificates.crt";
+Acquire::Languages "none";            // no translation files downloaded or stored
+
+// --- keep the environment clean (no LD_PRELOAD/APT_CONFIG injection via sudo) ---
+APT::Sanitize-Environment "true";
+
+// --- never let apt/dpkg run a maintainer script with a poisoned PATH ---
+DPkg::Path "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
+DPkg::Pre-Install-Pkgs { "/usr/sbin/dpkg-preconfigure --apt || true"; };
+
+// --- after every dpkg run, re-sign the UKI if the kernel changed (docs/03 §2 Path A) ---
+DPkg::Post-Invoke { "/usr/local/sbin/sign-uki-hook || true"; };

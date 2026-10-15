@@ -1,0 +1,80 @@
+#!/bin/ksh
+#
+#	acme-renew - renew certificates and reload the daemons that hold them
+#
+#	Installed to /usr/local/sbin/acme-renew and run from /etc/crontab on the
+#	gateway and on the mail guest.  It is deliberately not a daemon: a renewal
+#	is a rare event, and the reload that follows it is the part that can go
+#	wrong, so it should be visible in the log.
+#
+#	acme-client(1) is idempotent — it only talks to the CA when a certificate
+#	is close to expiry — so running this daily costs nothing on the other 364.
+#
+#	usage: acme-renew [-n]
+
+set -u
+
+DRY=no
+[ "${1:-}" = "-n" ] && DRY=yes
+
+ACME=/usr/sbin/acme-client
+CONF=/etc/acme-client.conf
+STAMP=/var/db/acme-renew.last
+LOG=local0.info
+
+log() { logger -t acme-renew -p "$LOG" "$*"; echo "acme-renew: $*"; }
+die() { log "$*"; exit 1; }
+
+[ "$(id -u)" -eq 0 ] || die "must be run as root"
+[ -x "$ACME" ] || die "$ACME not found"
+[ -r "$CONF" ] || die "$CONF not readable"
+
+# Every "domain" block in the configuration file.
+domains=$(sed -n 's/^domain[ \t]\{1,\}\([^ \t{]*\).*/\1/p' "$CONF")
+[ -n "$domains" ] || die "no domain blocks in $CONF"
+
+# Hash the certificates *before* the run: if nothing changed, there is no
+# reason to bounce a daemon and drop every TLS connection for a moment.
+before=$(cat /etc/ssl/*.crt 2>/dev/null | sha256 | awk '{print $NF}')
+[ "$DRY" = yes ] && { log "dry run: would renew: $domains"; exit 0; }
+
+for d in $domains; do
+	log "checking $d"
+	$ACME -v "$d" >>/var/log/acme.log 2>&1 ||
+		log "renewal of $d failed (see /var/log/acme.log)"
+done
+
+after=$(cat /etc/ssl/*.crt 2>/dev/null | sha256 | awk '{print $NF}')
+
+if [ "$before" = "$after" ]; then
+	log "no certificate changed; no reload needed"
+	date +%s > "$STAMP"
+	exit 0
+fi
+
+log "certificates changed; reloading the daemons that hold them"
+
+# Only reload what is actually running: this script is deployed to the gateway
+# (relayd) and to the mail guest (smtpd, dovecot), and reloading a stopped
+# daemon prints a confusing error into the cron mail.
+rcctl check relayd >/dev/null 2>&1 && rcctl reload relayd
+rcctl check httpd  >/dev/null 2>&1 && rcctl reload httpd
+if rcctl check smtpd >/dev/null 2>&1; then
+	# smtpd(8) picks up new certificates on reload, and the pki entries are
+	# re-read at the same time.
+	rcctl reload smtpd
+fi
+rcctl check dovecot >/dev/null 2>&1 && rcctl restart dovecot
+
+log "renewal complete"
+date +%s > "$STAMP"
+
+# A failed renewal is silent for weeks if nothing watches the log, so make the
+# certificate's remaining lifetime part of the output that cron mails.
+for crt in /etc/ssl/*.crt; do
+	[ -f "$crt" ] || continue
+	exp=$(openssl x509 -enddate -noout -in "$crt" 2>/dev/null | cut -d= -f2)
+	[ -n "$exp" ] && log "$crt expires $exp"
+done
+
+exit 0

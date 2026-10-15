@@ -1,0 +1,86 @@
+#!/bin/ksh
+#
+#	zone-snapshot - keep dated copies of the DNS zone files
+#
+#	Installed to /usr/local/sbin/zone-snapshot and run from /etc/crontab on the
+#	gateway, where the primary copies live.
+#
+#	A zone file is edited rarely and by hand, which is exactly the situation
+#	where a diff against yesterday is worth more than a backup from last week.
+#	The snapshots are text, so they compress to almost nothing.
+#
+#	usage: zone-snapshot [-k keep] [-n]
+#
+#	Layout:
+#	  /var/nsd/snapshots/YYYY-MM-DD/lab.example.org.zone
+#	  /var/nsd/snapshots/YYYY-MM-DD/50.10.10.in-addr.arpa.zone
+
+set -u
+
+KEEP=14			# days of history
+DRY=no
+
+while getopts k:n opt; do
+	case "$opt" in
+	k) KEEP=$OPTARG ;;
+	n) DRY=yes ;;
+	*) echo "usage: $0 [-k days] [-n]" >&2; exit 2 ;;
+	esac
+done
+
+ZONEDIR=/var/nsd/zones
+SNAPDIR=/var/nsd/snapshots
+TODAY=$(date +%Y-%m-%d)
+DEST="$SNAPDIR/$TODAY"
+
+log() { logger -t zone-snapshot -p local0.info "$*"; echo "zone-snapshot: $*"; }
+
+[ "$(id -u)" -eq 0 ] || { echo "zone-snapshot: must be run as root" >&2; exit 1; }
+[ -d "$ZONEDIR" ] || { log "no $ZONEDIR; nothing to do"; exit 0; }
+
+if [ "$DRY" = yes ]; then
+	log "dry run: would copy $ZONEDIR/*.zone to $DEST"
+	exit 0
+fi
+
+# nsd(8) rewrites secondary zone files in place, so a copy taken mid-transfer
+# can be a truncated zone.  Taking the snapshot from the *primary* directory
+# (which nsd only reads) avoids that entirely — another reason the primary
+# lives on the gateway rather than on a guest.
+mkdir -p "$DEST" || { log "cannot create $DEST"; exit 1; }
+chmod 700 "$SNAPDIR" "$DEST"
+
+copied=0
+for z in "$ZONEDIR"/*.zone; do
+	[ -f "$z" ] || continue
+	# Validate before freezing: a snapshot of a broken zone is a record of a
+	# mistake, and the whole point is to be able to go back to a good one.
+	if nsd-checkzone "$(basename "$z" .zone)" "$z" >/dev/null 2>&1; then
+		cp -p "$z" "$DEST/" && copied=$((copied + 1))
+	else
+		log "WARNING: $(basename "$z") does not validate; snapshotting anyway"
+		cp -p "$z" "$DEST/${z##*/}.broken-$(date +%s)"
+	fi
+done
+
+log "snapshotted $copied zone file(s) to $DEST"
+
+# Record the serial of each zone with the snapshot, so "which version was live
+# on the 3rd?" is answered by reading a file rather than by diffing.
+{
+	for z in "$ZONEDIR"/*.zone; do
+		[ -f "$z" ] || continue
+		printf '%s %s\n' "$(basename "$z")" \
+			"$(awk '/\);/{getline; print $1; exit}' "$z")"
+	done
+} > "$DEST/serials.txt"
+
+# Prune old snapshots: keep the newest $KEEP directories.
+if [ "$KEEP" -gt 0 ]; then
+	ls -1dt "$SNAPDIR"/*/ 2>/dev/null | awk -v keep="$KEEP" 'NR > keep' |
+		while IFS= read -r old; do
+			rm -rf "$old" && log "pruned $old"
+		done
+fi
+
+exit 0

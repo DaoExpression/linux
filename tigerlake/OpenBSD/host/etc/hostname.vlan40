@@ -1,0 +1,5 @@
+#	DMZ member of veb0 — no address here; the gateway address 10.10.40.1
+#	lives on veb0 (see hostname.veb0) which is also the vmd(8) switch "dmz".
+vlan 40 vlandev igc1
+description "dmz member -> veb0"
+up

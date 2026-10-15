@@ -1,0 +1,34 @@
+#	/etc/mail/aliases — mail guest
+#
+#	Referenced from smtpd.conf as:  table aliases file:/etc/mail/aliases
+#	This is the *mail server's* alias file, not the gateway's: on the mail
+#	guest the aliases resolve to virtual mailboxes under /var/vmail, not to
+#	addresses that get forwarded off-box.
+#
+#	Check after editing:  smtpd -n ; rcctl reload smtpd
+
+# --- routing of system mail ---------------------------------------------------
+# Anything the daemons on this guest send to a local account lands in the admin
+# mailbox rather than in a mbox nobody reads.
+root:			admin@lab.example.org
+daemon:			admin@lab.example.org
+operator:		admin@lab.example.org
+postmaster:		admin@lab.example.org
+MAILER-DAEMON:		postmaster
+
+# --- service accounts ----------------------------------------------------------
+_smtpd:			admin@lab.example.org
+_smtpq:			admin@lab.example.org
+_dovecot:		admin@lab.example.org
+dovecot:		admin@lab.example.org
+_dovecotlogin:		admin@lab.example.org
+www:			admin@lab.example.org
+monitor:		admin@lab.example.org
+backup:			admin@lab.example.org
+
+# --- notes ---------------------------------------------------------------------
+# * The "vmuser" accounts are deliberately absent: they do not exist, and an
+#   alias pointing at a nonexistent account turns a bounce into a loop.
+# * Keep this file in sync with vms/*/etc/mail/aliases on the other guests;
+#   those forward their system mail here, so a name that resolves on a guest
+#   and not here becomes a bounce.

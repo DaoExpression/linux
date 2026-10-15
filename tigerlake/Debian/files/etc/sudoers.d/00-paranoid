@@ -1,0 +1,26 @@
+# /etc/sudoers.d/00-paranoid
+# Installed with mode 0440, root:root. Validate with: visudo -c
+# See docs/04-base-hardening.md §1.
+
+Defaults  env_reset
+Defaults  secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Defaults  use_pty
+Defaults  logfile="/var/log/sudo.log"
+Defaults  log_input, log_output          # full session transcript for root actions
+Defaults  iolog_dir="/var/log/sudo-io"
+Defaults  timestamp_timeout=0            # always re-authenticate, every time
+Defaults  passwd_tries=3
+Defaults  badpass_message="Authentication failure."
+Defaults  lecture=never
+Defaults  !visiblepw
+Defaults  umask=0027
+Defaults  requiretty
+Defaults  !fqdn
+Defaults  env_keep -= "SSH_AUTH_SOCK"    # do not carry agent forwarding into root shells
+Defaults  env_keep -= "DISPLAY"
+
+# The one human admin account. Replace 'admin' with your username.
+admin ALL=(ALL:ALL) ALL
+
+# Everything else is denied by not existing. Do not add NOPASSWD rules: they convert
+# "compromised shell as admin" into "root" with one command.

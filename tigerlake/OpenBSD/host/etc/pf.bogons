@@ -1,0 +1,44 @@
+#	/etc/pf.bogons — sources that must never arrive from the internet
+#
+#	Referenced by pf.conf as:  table <bogons> persist file "/etc/pf.bogons"
+#
+#	This is the IPv4 set from RFC 6890 / RFC 5735 plus the special-purpose
+#	blocks.  It intentionally INCLUDES RFC 1918 space and the lab's own
+#	10.10.0.0/16: nothing private may legitimately arrive on the WAN.
+#
+#	IPv6 is not included on purpose.  A file-backed table's address family is
+#	taken from the file contents, and this file is used by inet rules; if you
+#	want to filter IPv6 bogons, keep them in a second table with a second
+#	file and reference it from the icmp6 rules.
+#
+#	Keeping this fresh by hand is a losing game — the point of listing them
+#	here is that the common cases are covered without any external feed.
+#	If you want a live feed, download a bogon list to /etc/pf.bogons in a
+#	cron job and reload with:  pfctl -t bogons -T replace -f /etc/pf.bogons
+
+# --- RFC 5735/6890 special purpose -----------------------------------------
+0.0.0.0/8		# "this network"
+10.0.0.0/8		# private
+100.64.0.0/10		# CGNAT / vmd(8) local interfaces
+127.0.0.0/8		# loopback
+169.254.0.0/16		# link-local
+172.16.0.0/12		# private
+192.0.0.0/24		# IETF protocol assignments
+192.0.2.0/24		# TEST-NET-1
+192.88.99.0/24		# 6to4 relay anycast (deprecated)
+192.168.0.0/16		# private
+198.18.0.0/15		# benchmarking
+198.51.100.0/24		# TEST-NET-2
+203.0.113.0/24		# TEST-NET-3
+240.0.0.0/4		# reserved (includes 255.255.255.255/32)
+
+# --- the lab itself ---------------------------------------------------------
+# A packet claiming to come from the lab cannot have come from the internet.
+10.10.0.0/16
+
+# --- multicast --------------------------------------------------------------
+# Multicast (224.0.0.0/4) is not inside any block above, so list it if you want
+# it logged separately from the catch-all reserved block:
+#224.0.0.0/4
+# Note that 240.0.0.0/4 above is a *different* range (240.0.0.0-255.255.255.255)
+# and does not cover multicast.

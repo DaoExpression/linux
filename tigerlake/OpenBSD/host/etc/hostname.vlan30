@@ -1,0 +1,7 @@
+#	GUEST — 10.10.30.0/24, internet only.  Layer-2 isolation is enforced in
+#	pf (isolate flag in dhcpd.conf plus the guest_if rules).
+vlan 30 vlandev igc1
+description "guest 10.10.30.0/24"
+inet 10.10.30.1 255.255.255.0 10.10.30.255
+inet6 fd00:10:10:30::1 64
+up

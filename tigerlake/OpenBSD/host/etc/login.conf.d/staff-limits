@@ -1,0 +1,25 @@
+#	/etc/login.conf.d/staff-limits
+#
+#	Replacement for the shipped "staff" login class.  A drop-in class
+#	*replaces* the class of the same name from /etc/login.conf, so the
+#	settings you want from the shipped version are repeated here.
+#
+#	Changed relative to the shipped class:
+#	  * openfiles raised (lots of parallel ssh/sftp sessions)
+#	  * datasize raised (building packages, testing configs)
+#	  * ignorenologin removed: /etc/nologin must be honoured while an
+#	    operator is doing maintenance
+#
+#	Applies to the "staff" class only; add operators with:
+#	    usermod -L staff <login>
+
+staff:\
+	:datasize-cur=4G:\
+	:datasize-max=infinity:\
+	:openfiles-cur=4096:\
+	:openfiles-max=8192:\
+	:maxproc-cur=512:\
+	:maxproc-max=1024:\
+	:stacksize-cur=16M:\
+	:umask=022:\
+	:tc=default:

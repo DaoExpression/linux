@@ -1,0 +1,142 @@
+#!/bin/ksh
+#
+#	deploy-config - install one configuration file, validating it first
+#
+#	Installed to /usr/local/sbin/deploy-config.  This is the command that
+#	/etc/doas.conf permits on the gateway and on every guest, and it exists so
+#	that "reload the firewall" does not also mean "hand this login a root
+#	shell": the only thing an operator can escalate to is installing a file
+#	that passes its own validator.
+#
+#	usage: deploy-config <candidate> <destination>
+#
+#	  deploy-config /tmp/pf.conf /etc/pf.conf
+#	  deploy-config -n /tmp/httpd.conf /etc/httpd.conf     # dry run
+#
+#	Validation is chosen from the destination's basename, because guessing by
+#	content is how you end up piping a broken rc.conf into a running daemon.
+#
+#	The install is atomic: the candidate is validated, copied to a temporary
+#	file in the destination directory, and renamed over the target.  A rename
+#	within one filesystem either happens or does not, so a crash cannot leave
+#	a half-written config behind.
+#
+#	Nothing is reloaded automatically.  The last lines of output tell you
+#	exactly which command to run, and that command is a deliberate second step.
+
+set -u
+
+DRY=no
+if [ "${1:-}" = "-n" ]; then
+	DRY=yes
+	shift
+fi
+
+SRC=${1:-}
+DST=${2:-}
+if [ -z "$SRC" ] || [ -z "$DST" ]; then
+	echo "usage: deploy-config [-n] <candidate> <destination>" >&2
+	exit 2
+fi
+
+[ -f "$SRC" ] || { echo "deploy-config: $SRC does not exist" >&2; exit 1; }
+[ -d "$(dirname "$DST")" ] || { echo "deploy-config: $(dirname "$DST") does not exist" >&2; exit 1; }
+
+log() { echo "deploy-config: $*"; }
+die() { echo "deploy-config: $*" >&2; exit 1; }
+
+# ------------------------------------------------------------------ validate
+# The destination decides the validator.  "none" is a deliberate choice for
+# files whose only check is "does the daemon accept it when it reloads", and
+# for rc.conf.local-style files where a typo is harmless.
+validator() {
+	case "$(basename "$1")" in
+	pf.conf)		echo "pfctl -nf" ;;
+	sshd_config)		echo "sshd -t -f" ;;
+	httpd.conf)		echo "httpd -n -f" ;;
+	relayd.conf)		echo "relayd -n -f" ;;
+	smtpd.conf)		echo "smtpd -n -f" ;;
+	iked.conf)		echo "iked -n -f" ;;
+	unwind.conf)		echo "unwind -n -f" ;;
+	ntpd.conf)		echo "ntpd -n -f" ;;
+	dhcpd.conf)		echo "dhcpd -n -c" ;;
+	nsd.conf)		echo "nsd-checkconf" ;;
+	vm.conf)		echo "vm.conf-check" ;;
+	doas.conf)		echo "doas -C" ;;
+	*)			echo "" ;;
+	esac
+}
+
+# NOTE: case patterns that contain a space must be quoted ("doas -C").
+# Unquoted, the shell ends the pattern at the space and reports a syntax error
+# somewhere further down the file, which is a genuinely confusing five
+# minutes.
+CHECK=$(validator "$DST")
+
+if [ -n "$CHECK" ]; then
+	log "validating with: $CHECK"
+	case "$CHECK" in
+	"vm.conf-check")
+		# vmctl(8) has no -n: "vmctl reload" parses the file through vmd(8).
+		# Reaching a running daemon from a config installer is unpleasant but
+		# honest — and it does not start or stop anything.
+		vmctl reload || die "vm.conf was rejected by vmd(8); nothing installed"
+		;;
+	"doas -C")
+		doas -C "$SRC" || die "doas.conf is invalid; nothing installed"
+		;;
+	*)
+		# shellcheck disable=SC2086
+		$CHECK "$SRC" || die "'$CHECK' rejected $SRC; nothing installed"
+		;;
+	esac
+else
+	log "no validator known for $(basename "$DST") — installing unvalidated"
+fi
+
+# ------------------------------------------------------------------ install
+TMP="$DST.deploy-config.$$"
+trap 'rm -f "$TMP"' EXIT INT TERM
+
+# Preserve the destination's ownership/mode when it already exists: a config
+# file that becomes world-writable because it was deployed is a worse bug than
+# the one being fixed.
+if [ -f "$DST" ]; then
+	OWNER=$(stat -f '%Su:%Sg' "$DST")
+	MODE=$(stat -f '%Lp' "$DST")
+else
+	OWNER=root:wheel
+	MODE=644
+	log "$DST does not exist yet; installing as $OWNER $MODE"
+fi
+
+if [ "$DRY" = yes ]; then
+	log "dry run: would install $SRC -> $DST ($OWNER $MODE)"
+	exit 0
+fi
+
+cp "$SRC" "$TMP" || die "cannot stage $TMP"
+chown "$OWNER" "$TMP" || die "cannot set owner $OWNER"
+chmod "$MODE" "$TMP" || die "cannot set mode $MODE"
+mv "$TMP" "$DST" || die "cannot install $DST"
+
+log "installed $DST ($OWNER $MODE)"
+
+# ------------------------------------------------------------------ reload
+# The mapping from file to reload command, printed rather than executed.
+case "$(basename "$DST")" in
+pf.conf)		echo "  next:  pfctl -f $DST" ;;
+sshd_config)		echo "  next:  rcctl reload sshd" ;;
+httpd.conf)		echo "  next:  rcctl reload httpd" ;;
+relayd.conf)		echo "  next:  rcctl reload relayd" ;;
+smtpd.conf)		echo "  next:  rcctl reload smtpd" ;;
+iked.conf)		echo "  next:  rcctl reload iked" ;;
+unwind.conf)		echo "  next:  rcctl restart unwind" ;;
+ntpd.conf)		echo "  next:  rcctl restart ntpd" ;;
+dhcpd.conf)		echo "  next:  rcctl reload dhcpd" ;;
+nsd.conf)		echo "  next:  rcctl reload nsd" ;;
+doas.conf)		echo "  next:  nothing — doas reads it on every invocation" ;;
+*)			echo "  next:  restart whatever reads this file" ;;
+esac
+
+exit 0

@@ -1,0 +1,44 @@
+// /etc/apt/apt.conf.d/50unattended-upgrades
+// SECURITY UPDATES ONLY. Everything else is a deliberate, attended decision (docs/10 §3).
+// Check with: sudo unattended-upgrade --dry-run -d | tail -20
+
+Unattended-Upgrade::Allowed-Origins {
+        "${distro_id}:${distro_codename}-security";
+        "${distro_id}ESMApps:${distro_codename}-apps-security";
+        "${distro_id}ESM:${distro_codename}-infra-security";
+};
+
+// Nothing from stable-updates, backports, or a third-party repo: those are not "urgent by nature".
+Unattended-Upgrade::Package-Blacklist {
+        // Anything that needs a human decision:
+        "linux-image-amd64";
+        "apache2";
+        "modsecurity-crs";
+        "libapache2-mod-security2";
+        "nftables";
+        "openssh-server";
+        "systemd";
+        "apparmor";
+        "aide";
+        "fwupd";
+        "intel-microcode";
+};
+
+Unattended-Upgrade::DevRelease "false";
+Unattended-Upgrade::AutoFixInterruptedDpkg "true";
+Unattended-Upgrade::MinimalSteps "true";
+Unattended-Upgrade::Remove-Unused-Kernel-Packages "false";
+Unattended-Upgrade::Remove-New-Unused-Dependencies "true";
+Unattended-Upgrade::Remove-Unused-Dependencies "false";
+
+// NEVER reboot automatically on a server: you cannot enter the LUKS passphrase from a cron job.
+Unattended-Upgrade::Automatic-Reboot "false";
+Unattended-Upgrade::Automatic-Reboot-WithUsers "false";
+
+// No mail daemon is installed by design; results land in the journal and /var/log/unattended-upgrades.
+Unattended-Upgrade::MailReport "on-change";
+Unattended-Upgrade::SyslogEnable "true";
+Unattended-Upgrade::SyslogFacility "daemon";
+
+// Read the changelogs before they are applied.
+Unattended-Upgrade::InstallOnShutdown "false";

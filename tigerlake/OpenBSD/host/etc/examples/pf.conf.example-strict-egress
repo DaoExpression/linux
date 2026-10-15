@@ -1,0 +1,30 @@
+#	/etc/examples/pf.conf.example-strict-egress
+#
+#	OPTIONAL variant of /etc/pf.conf.  The live ruleset lets all internal
+#	traffic outbound ("pass out ... keep state" for every internal net);
+#	this one additionally restricts what the lab may *originate*, which is
+#	what you want once the lab is settled and you care about a compromised
+#	VM being unable to phone home on an odd port.
+#
+#	Drop-in replacement for the "pass out on $ext_if" line in pf.conf:
+
+# DNS, NTP, HTTP(S), mail submission, and the package mirror, and nothing
+# else, from any internal host.
+pass out on $ext_if inet proto udp from { $lan_nets } to any port domain keep state
+pass out on $ext_if inet proto udp from { $lan_nets } to any port ntp keep state
+pass out on $ext_if inet proto tcp from { $lan_nets } to any port { http https } keep state
+pass out on $ext_if inet proto tcp from { $lan_nets } to any port { smtp submission } \
+	user proxy keep state
+pass out on $ext_if inet proto tcp from { $lan_nets } to $pkg_mirror port https keep state
+
+# ICMP that a TCP/IP stack actually needs to make progress.
+pass out on $ext_if inet proto icmp from { $lan_nets } icmp-type $icmp_types_out keep state
+pass out on $ext_if inet proto icmp from { $lan_nets } icmp-type { timexceed, paramprob } keep state
+
+# Guests never talk straight to the internet; they go through the gateway's
+# own services (unwind, relayd, smtpd).
+block out log on $ext_if from $guest_net to any
+
+# Uncomment for a "quiet network" profile: block and log anything the rules
+# above did not allow, so the log itself tells you what the lab needs.
+#block out log on $ext_if from { $lan_nets } to any

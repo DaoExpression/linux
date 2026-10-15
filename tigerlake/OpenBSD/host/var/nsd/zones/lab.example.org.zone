@@ -1,0 +1,99 @@
+;	/var/nsd/zones/lab.example.org.zone
+;
+;	Primary zone file for the lab.  Served by nsd(8) on the gateway
+;	(10.10.50.1 / 10.10.10.1) and transferred to the dns VM.
+;
+;	Check before reloading:
+;	    nsd-checkzone lab.example.org /var/nsd/zones/lab.example.org.zone
+;	Then bump the serial and reload:
+;	    rcctl reload nsd
+;	Verify from elsewhere:
+;	    dig @10.10.50.1 SOA lab.example.org
+;	    dig @10.10.50.1 -x 10.10.50.11
+;
+;	Replace lab.example.org with a domain you control before publishing
+;	anything from this zone to the internet (MX, SPF and CAA records below
+;	all assume it is yours).
+
+$ORIGIN lab.example.org.
+$TTL 3600
+
+@	IN	SOA	ns.lab.example.org. hostmaster.lab.example.org. (
+			2026101301	; serial  YYYYMMDDnn — bump on every edit
+			3600		; refresh
+			1800		; retry
+			604800		; expire
+			3600 )		; negative-answer TTL
+
+; ------------------------------------------------------------------ authority
+@		IN	NS	ns.lab.example.org.
+@		IN	NS	ns2.lab.example.org.
+@		IN	MX	10 mail.lab.example.org.
+
+; ------------------------------------------------------------------ the apex
+@		IN	A	10.10.10.1
+@		IN	AAAA	fd00:10:10:10::1
+@		IN	TXT	"v=spf1 mx -all"
+@		IN	TXT	"lab gateway — 10.10.10.1, see https://lab.example.org/"
+; Only this CA may issue certificates for the lab domain, and reports go to
+; the human who can actually fix a mis-issuance.
+@		IN	CAA	0 issue "letsencrypt.org"
+@		IN	CAA	0 iodef "mailto:hostmaster@lab.example.org"
+
+; ------------------------------------------------------------------ nameservers
+; ns  = the dns VM, which is what clients query (unbound, recursive).
+; ns2 = the gateway's nsd, authoritative for this zone only.
+ns		IN	A	10.10.50.11
+ns		IN	AAAA	fd00:10:10:50::11
+ns2		IN	A	10.10.10.1
+ns2		IN	AAAA	fd00:10:10:10::1
+
+; ------------------------------------------------------------------ infrastructure
+gw		IN	A	10.10.10.1
+gw		IN	AAAA	fd00:10:10:10::1
+bastion		IN	A	10.10.50.10
+bastion		IN	AAAA	fd00:10:10:50::10
+dns		IN	A	10.10.50.11
+dns		IN	AAAA	fd00:10:10:50::11
+db		IN	10.10.50.12
+db		IN	AAAA	fd00:10:10:50::12
+storage		IN	A	10.10.50.13
+storage		IN	AAAA	fd00:10:10:50::13
+mon		IN	A	10.10.50.14
+mon		IN	AAAA	fd00:10:10:50::14
+
+; ------------------------------------------------------------------ published
+; web is the relayd(8) listener on the gateway, so it is an alias of the apex
+; for HTTPS; mail is a real host in the DMZ with its own certificates.
+www		IN	CNAME	@
+web		IN	A	10.10.40.20
+web		IN	AAAA	fd00:10:10:40::20
+mail		IN	A	10.10.40.21
+mail		IN	AAAA	fd00:10:10:40::21
+
+; DKIM selector "lab2048" — the private key lives on the mail VM at
+; /etc/mail/dkim/lab2048.key and must never leave it.  The public key below
+; must match it exactly; regenerate both with:
+;	openssl genrsa -out lab2048.key 2048
+;	openssl rsa -in lab2048.key -pubout -out lab2048.pub
+; then paste the base64 between the quotes, split across lines as shown.
+lab2048._domainkey.mail	IN TXT (
+	"v=DKIM1; k=rsa; p=REPLACE-ME-WITH-THE-BASE64-PUBLIC-KEY"
+	)
+
+_dmarc		IN	TXT	"v=DMARC1; p=quarantine; rua=mailto:dmarc@lab.example.org; adkim=s; aspf=s"
+
+; ------------------------------------------------------------------ client zones
+; The AP registers itself here so that clients can reach it by name.
+ap		IN	A	10.10.20.10
+sw-core		IN	A	10.10.20.11
+
+; Wildcard for the GUEST network: every guest device gets an A record under
+; guest.lab.example.org pointing at the gateway, so a captive portal can be
+; served even before the client authenticates.
+guest		IN	A	10.10.30.1
+*.guest		IN	A	10.10.30.1
+
+; ------------------------------------------------------------------ validation
+; Catch typos instead of silently missing records: SPF/DMARC/CAA above are
+; checked by "dig +short TXT <name>" after every reload.

@@ -1,0 +1,83 @@
+#	$OpenBSD: sshd_config,v 1.100 $
+#
+#	/etc/ssh/sshd_config — gateway
+#
+#	Hardening choices, in order of importance:
+#	  * public keys only, no interactive/kbd-interactive auth
+#	  * sshd listens on MGMT (vlan10) and SRV (veb1) only — never on WAN
+#	  * root may log in with a key only (prohibit-password), for the
+#	    unavoidable single-user-ish emergencies
+#	  * AllowUsers pins the accounts that may log in at all
+#
+#	Check before restarting:  sshd -t
+#	Then:                     rcctl restart sshd
+
+Port 22
+AddressFamily any
+
+# Only the management and server networks reach sshd.  Add the VPN net if
+# road warriors should administer the box directly.
+ListenAddress 10.10.10.1
+ListenAddress 10.10.50.1
+
+# Only list key types that exist on disk: sshd refuses to start if a HostKey
+# file is missing.  ssh-keygen(1) -A creates ed25519 + rsa by default; add
+# the ecdsa line only if you actually generate that key.
+HostKey /etc/ssh/ssh_host_ed25519_key
+HostKey /etc/ssh/ssh_host_rsa_key
+#HostKey /etc/ssh/ssh_host_ecdsa_key
+
+# ---------------------------------------------------------------- authentication
+PermitRootLogin prohibit-password
+PubkeyAuthentication yes
+AuthorizedKeysFile .ssh/authorized_keys
+AuthenticationMethods publickey
+
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitEmptyPasswords no
+UseDNS no
+LoginGraceTime 30
+MaxAuthTries 3
+MaxSessions 4
+MaxStartups 3:50:10
+
+# Who may log in, and from where.  "admin" is the only interactive account and
+# exists only on the MGMT/VPN networks; the monitor and backup accounts are
+# non-interactive by design (/sbin/nologin) and therefore not listed.
+# NOTE: AllowUsers is an allow-list, so root cannot log in here at all — the
+# PermitRootLogin setting above only matters if you remove this list.
+AllowUsers admin@10.10.10.0/24
+AllowUsers admin@10.10.60.0/24
+AllowGroups wheel operators
+
+# ---------------------------------------------------------------- session
+StrictModes yes
+Banner /etc/ssh/banner
+PrintMotd yes
+PrintLastLog yes
+PermitUserEnvironment no
+ClientAliveInterval 120
+ClientAliveCountMax 2
+TCPKeepAlive yes
+
+# ---------------------------------------------------------------- forwarding
+AllowAgentForwarding no
+AllowTcpForwarding no
+PermitTunnel no
+GatewayPorts no
+X11Forwarding no
+X11UseLocalhost yes
+PermitListen none
+PermitOpen none
+
+# ---------------------------------------------------------------- logging
+LogLevel VERBOSE
+SyslogFacility AUTH
+
+# ---------------------------------------------------------------- subsystems
+Subsystem	sftp	/usr/libexec/sftp-server
+
+# Optional per-host overrides, e.g. a bastion-wide exception for an audit
+# account.  Keep this last so nothing after it is silently ignored.
+Include /etc/ssh/sshd_config.d/*.conf

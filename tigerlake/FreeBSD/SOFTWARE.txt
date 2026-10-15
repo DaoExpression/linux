@@ -1,0 +1,93 @@
+Software check for FreeBSD desktop on i7-11390H (Tiger Lake)
+============================================================
+Generated Oct 2026 - targets FreeBSD 14.3-RELEASE.
+
+ALL programs are available as official FreeBSD packages.
+One command installs everything:
+
+    doas pkg install -y \
+        chromium firefox gimp vlc keepassxc \
+        i3 leafpad vim tmux \
+        curl newsboat irssi calcurse \
+        git tig
+
+--------------------------------------------------------------------
+1. What you asked for -- all exist
+--------------------------------------------------------------------
+
+Browser / desktop apps
+  chromium          www/chromium        Needs fdescfs mounted (see tips sec.3)
+  firefox           www/firefox         Works out of the box
+  gimp              graphics/gimp       Latest 3.x available
+  vlc               multimedia/vlc      Can use VAAPI hardware decode
+  keepassxc         security/keepassxc
+
+Terminal / tiling
+  i3                x11-wm/i3           Window manager you already picked
+  leafpad           editors/leafpad     Yes, still in ports (GTK, very light)
+  vim               editors/vim
+  tmux              sysutils/tmux
+
+CLI tools
+  curl              ftp/curl
+  newsboat          www/newsboat
+  irssi             irc/irssi
+  calcurse          productivity/calcurse
+  git               devel/git
+  tig               devel/tig
+
+--------------------------------------------------------------------
+2. Extra packages highly recommended for your hardware
+--------------------------------------------------------------------
+
+Video / GPU / audio (Intel Iris Xe VAAPI):
+    libva-intel-media-driver   -> enables HW accelerated video decode
+    libva-utils                -> `vainfo` to verify it works
+    mesa-demos                 -> glxinfo | grep render
+
+Terminal niceties:
+    starship (shell prompt), fzf, ripgrep, tree
+
+    doas pkg install -y libva-intel-media-driver libva-utils mesa-demos fzf ripgrep
+
+--------------------------------------------------------------------
+3. Performance / practical tips for this machine
+--------------------------------------------------------------------
+
+a) Chromium needs /dev/fd (fdescfs), or it will not start. Add:
+
+    echo 'fdesc /dev/fd fdescfs rw 0 0' >> doas /etc/fstab
+
+   and reboot (or just `doas mount -t fdescfs fdesc /dev/fd`).
+
+b) Hardware video decode in browsers:
+   Firefox: set in about:config
+       media.ffmpeg.vaapi.enabled = true
+       layers.acceleration.force-enabled = true (optional)
+   Chromium: launch with
+       chromium --use-gl=desktop --enable-features=VaapiVideoDecodeLinuxGL
+   and confirm with `vainfo` showing a H264/HEVC entry.
+
+c) i3: put powerd/thermal in your i3 config exec lines only if you
+   removed it from rc.conf. powerd is already handled by rc.conf.
+
+d) Battery: use powertop --auto-tune once, or add
+       u3p_power_on_enable=NO / hw.usb.enable_sleeping=1
+   to sysctl... simplest is just:
+
+    doas powertop --auto-tune
+
+e) Keep the i915kms in rc.conf kld_list. Do NOT also load it from
+   loader.conf; double-load is a common breakage cause.
+
+f) For tmux + true color, add to ~/.tmux.conf:
+       set -ga terminal-overrides ",*256*:Tc"
+
+g) newsboat/irssi/calcurse all run great on this hardware; group them
+   in a dedicated i3 workspace for a fast tmux-based "terminal desktop".
+
+h) If chromium crashes on startup, check `dmesg | tail` — it is almost
+   always the fdescfs step (3a) missing.
+
+Verify VAAPI:
+    vainfo | grep -E 'VA-API|H264|HEVC'

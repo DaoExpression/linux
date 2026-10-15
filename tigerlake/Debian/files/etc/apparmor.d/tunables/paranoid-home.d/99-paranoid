@@ -1,0 +1,23 @@
+# /etc/apparmor.d/tunables/paranoid-home.d/99-paranoid
+#
+# AppArmor 'tunables' are variables that profiles use. The stock @{HOME} tunable expands to the home
+# directories of *all* users on the system, which means a profile written as "@{HOME}/** r" silently
+# grants access to every user's home - usually not what the author intended, and it changes as users
+# come and go.
+#
+# This file pins the value and keeps it deliberately empty for confined services on a server:
+# a headless system service has no business reading anybody's home directory. Profiles that
+# genuinely need a home (interactive logins, if you ever add one) should opt in explicitly.
+#
+# Reload after editing:  sudo apparmor_parser -r /etc/apparmor.d/tunables/ \
+#                        sudo systemctl reload apparmor
+# Verify the effective value:  sudo apparmor_parser -p -d /etc/apparmor.d/usr.sbin.apache2 | grep HOME
+
+# No home directories for services. Do not replace this with @{HOMEDIRS}: on this machine the web
+# user is www-data with /var/www as its (unused) home, and the admin user's home is irrelevant to
+# every confined daemon here.
+@{HOME}=
+
+# If you ever need a specific service home, define it narrowly instead of re-enabling all homes, e.g.
+#   @{HOME_SITE1}=/srv/site1
+# and grant that in the site's own profile only.

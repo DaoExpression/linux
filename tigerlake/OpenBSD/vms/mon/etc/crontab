@@ -1,0 +1,43 @@
+#	/etc/crontab — mon guest
+#
+#	Read by cron(8) directly, so it carries a "user" column.  This file
+#	REPLACES the one the installer wrote: diff it against the stock file on
+#	your release before deploying.
+#
+#	minute hour mday month wday user command
+
+# ------------------------------------------------------------------ verify the checks
+# A monitoring host whose own data collection has stopped is worse than no
+# monitoring: the graphs go flat and everyone assumes the lab is quiet.  This
+# compares the newest collectd RRD with "now" and complains when it is stale.
+#
+# The three helper scripts below are site-specific and are NOT shipped in this
+# repository (see the notes at the bottom), so the lines stay COMMENTED rather
+# than failing every night.
+#*/15	*	*	*	*	root	/usr/local/sbin/mon-selftest
+
+# ------------------------------------------------------------------ retention
+# collectd writes one RRD per metric; the CSV tree grows without limit.  Keep
+# 30 days of CSV locally (the aggregates are in the RRDs, and the storage guest
+# has the long-term copy).
+0	3	*	*	*	root	/usr/bin/find /var/db/collectd/csv -type f -mtime +30 \
+	-delete
+
+# ------------------------------------------------------------------ daily digest
+# A short "is anything on fire" page: interface errors, hosts that stopped
+# answering, disks above 85%.  Mail goes through the gateway's smtpd(8).
+#0	7	*	*	*	root	/usr/local/sbin/mon-digest
+
+# ------------------------------------------------------------------ weekly poll check
+# Prove that the credential the poller uses still works, rather than assuming
+# it will when a real incident needs it.
+#0	8	*	*	1	root	/usr/local/sbin/mon-pollcheck
+
+# ------------------------------------------------------------------ notes
+# * The three helper scripts (mon-selftest, mon-digest, mon-pollcheck) are
+#   small and site-specific; write them on the guest and keep them out of this
+#   repository.  Each should exit non-zero (so cron mails root) rather than
+#   printing a warning nobody reads.
+# * If you add node_exporter or a dashboard, run it as its own service with its
+#   own uid and add a matching pf rule in vms/mon/etc/pf.conf — this guest is
+#   already the most trusted one in the lab.

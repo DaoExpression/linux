@@ -1,0 +1,232 @@
+=============================================================================
+ WHAT FREEBSD OFFERS — capabilities tour + tips by user type
+=============================================================================
+ For the i7-11390H laptop described in README.md. Pointers to the other
+ files in this directory are marked [-> FILE].
+ Everything named here is in the BASE SYSTEM unless a pkg name is given.
+ The Handbook (ships as HTML with freebsd-docs) is the canonical reference.
+
+ -----------------------------------------------------------------------------
+ A. THE FOUNDATIONS (what makes FreeBSD different)
+ -----------------------------------------------------------------------------
+ A1. ONE COHERENT BASE SYSTEM
+     Kernel, userland, libc, ssh, even the compiler toolchain are one
+     versioned, tested whole. Consequences for you:
+       * freebsd-update patches EVERYTHING base-system atomically, with
+         rollback (freebsd-update rollback) — no repo hell for the base.
+       * You are never on "a distro's 3,000 independently-versioned glue
+         packages". Packages are additions, not the system itself.
+     TIP: check what you're running: uname -r ; freebsd-update -v status
+
+ A2. ZFS — the definitive filesystem (base system, OpenZFS release)
+     For a laptop it means: instant per-snapshot backups, zero-reboot
+     rollback after bad upgrades, per-user quotas in /home, checksums
+     that silently catch bitrot, and native encryption (zfs encrypt).
+     TIPS (desktop):
+       # snapshot /home every hour, keep last 48
+       doas zfs set com.sun:auto-snapshot=true zroot/home
+       pkg install zfs-snapshot-mgmt        # or a tiny cron, see below
+       # manual before a risky operation:
+       doas zfs snapshot zroot/home@before-big-change
+       doas zfs rollback -r zroot/home@before-big-change
+     TIP: sysutils/zfsnap or plain cron:  zfs-auto-snapshot -d 48 -p 1h
+       # boot environments — freebsd-update and upgrades snapshot /:
+       doas bectl list        # choose previous env at boot menu
+     TIP (server): zfs send/recv for offsite: borg-free backups:
+       zfs send -Ri zroot@yesterday zroot@today | ssh offsite zfs recv ...
+
+ A3. JAILS — the original container, in the base system
+     See pf.conf §8 and SECURITY-LOGS.txt §4 [-> pf.conf, SECURITY-LOGS.txt].
+     Unlike Docker, a jail is a bare, real boot of the OS under a shared
+     kernel: no daemon required, init scripts normal, no layers.
+     TIPS:
+       * iocage or bastille (pkg) for management; retire them out one day.
+       * Use jails to SHRINK attack surface of services: run your web
+         server, torrent client, IRC bouncer all inside jails; the host
+         keeps only sshd (or nothing at all!).
+       * pkg -j webserver upgrade    # run pkg inside a named jail.
+
+ A4. BHYVE — hypervisor, in the base system
+     Escape hatch for real isolation (untrusted binary = Linux VM).
+     Desktop quick-start: pkg install vm-bhyve; then
+       zfs create -o mountpoint=/vm zroot/vm
+       vm init && vm create -t linux -s 20G mylinux && vm install ...
+     TIP: for pure privacy isolation, a bhyve Linux guest with its own
+     MAC/stack is leagues stronger than browsers' "profiles".
+
+ A5. GEOM framework — storage building blocks (base system)
+       geli(8)     full-disk encryption. On this laptop, encrypt zroot
+                   at install time (bsdinstall offers it!). Post-hoc:
+                     # encrypt an empty partition GELI:
+                     geli init -s 4096 /dev/ada0p4 && geli attach ada0p4
+       gmirror(8)  software RAID1 (server tip: two NVMe: mirror them)
+       gjournal    journaling (mostly historic)
+       geom_label  stable names in /dev/gpt/ — we disable transparent
+                   gptid in loader.conf to keep names short [-> loader.conf]
+     TIP (privacy): see PRIVACY.txt for encrypted-root at installer time.
+
+ A6. DTRACE — production-safe system introspection, in the base system
+       doas dtrace -n 'syscall:::entry /pid == 12345/ { @[probefunc] = count(); }'
+     Explains "why is this slow" without stopping anything. Works with
+     userland probes (USDT) too.
+
+ A7. THE MAC FRAMEWORK & CAPSICUM — security primitives
+       capsicum(4) capability mode: a sandboxable program loses the
+                   global namespace; Firefox and Chromium use libcasper
+                   pieces of it. tcpdump was the poster child.
+       mlock/munlock, pledge-like casper services, audit(4)…
+     TIP: run `procstat -S <pid>` to see which programs are already in
+     capability mode — you'll be surprised how many base tools are.
+
+ A8. DOCS QUALITY
+       man(1) sections that matter: 1 user cmds, 4 drivers, 5 files,
+       7 misc, 8 admin.
+       TIP: `apropos -e keyword` finds commands you didn't know existed.
+       TIP: the FreeBSD Handbook ships on-disk via pkg install freebsd-doc
+       (EN); browse at /usr/local/share/doc/freebsd/handbook.
+
+ -----------------------------------------------------------------------------
+ B. DESKTOP USER TIPS (your i7-11390H laptop)
+ -----------------------------------------------------------------------------
+ B1. POWER/BATTERY — beyond powerd [-> rc.conf]
+       # see what's using watts (needs pkg install powertop):
+       doas powertop
+       # C-states actually reached (i7-11390H does C10):
+       sysctl machdep.cpu  | grep -i cx
+       # NVMe power states:
+       doas nvmecontrol logpage -p 2 nvme0     # power state stats
+       TIP: let KDE/xfce handle screen dimming; keep powerd in rc.conf.
+
+ B2. CRITICAL BATTERY EVENTS without a desktop daemon: a tiny cron that
+     checks acpiconf -i 0, and at <15% warns loudly /mails you:
+       doas acpiconf -i 0   # see the "Remaining capacity" line
+
+ B3. HIBERNATE/SUSPEND: acpiconf -s 3 (S3) usually just works on Tiger
+     Lake; zzz alias exists:
+       doas zzz        # suspend to RAM
+     TIP: add a lock-screen to your i3 config (i3lock) before zzz.
+
+ B4. GRAPHICS [-> xorg.conf]
+       VA-API verify: vainfo ; GPU top: doas intel_gpu_top  (pkg: intel-gpu-tools)
+       Multiple monitors: xrandr --output eDP-1 --auto --right-of HDMI-1
+         (kernel names from: xrandr --listmonitors)
+       Color: xcalib or colord (pkg: colord) — laptop panels ship
+       with bad gamma; worth 10 minutes once.
+
+ B5. AUDIO — snd_hda auto-configures everything normal. If the dialog
+     from jack/headphones confuses it:
+       mixer -o                # both channels
+       sysctl hw.snd.default_unit=...  [-> sysctl.conf commented lines]
+
+ B6. AUTOMOUNT USB — autofs is in the base system:
+       doas sysrc autofs_enable=YES
+       doas service automount start
+       # then just cd /media/USBKEY; automount(8) mounts on access.
+     TIP: no need for thunar-volman or any desktop daemon.
+
+ B7. WORKFLOW UNIQUENESS worth exploiting:
+       tmux/xterm + tmux (or check my .tmux.conf) + i3 workspaces
+       [-> SOFTWARE.txt] — see that file for the extras (fzf, ripgrep).
+
+ B8. BACKUPS the FreeBSD way (no cloud service needed):
+       * ZFS snapshots: instant, local [B4 above].
+       * zfsnap (pkg) for rotating snapshot sets.
+       * One tarball to a USB disk weekly:
+           doas tar -C / --exclude /dev --exclude /tmp \
+                -cf /media/BACKUP/root-$(date +%F).tar .
+         (ZFS snapshot of zroot/ROOT then `zfs send` to a USB zpool
+          is better still; see A2.)
+
+ B9. NIGHTLY "what changed" digest [-> SECURITY-LOGS.txt §5f] using
+     mtree(8) — in the base system and made for exactly this:
+       doas mtree -c -K sha256digest -p /etc > /root/etc.mtree
+       # later:
+       doas mtree -f /root/etc.mtree -p /etc | less
+
+ -----------------------------------------------------------------------------
+ C. SERVER ADMIN TIPS (when this box, or another, serves the network)
+ -----------------------------------------------------------------------------
+ C1. PERIODIC — the built-in report pipeline [-> SECURITY-LOGS.txt]
+     Read /etc/defaults/periodic.conf once; then enable extras in
+     /etc/periodic.conf (not /etc/crontab):
+       daily_status_security_pfblock_enable=YES   (pf summary)
+       weekly_accounting_enable=YES               (login accounting)
+     TIP: root's mail spool IS your ops inbox; focus it deliberately.
+
+ C2. LOGIN/HOST accounting (base):
+       doas sysrc accounting_enable=YES
+       lastcomm | head ; sa -s    # command accounting
+
+ C3. CAPACITY/WARNING with nothing extra installed:
+       df -h , zpool list (ZFS: check CAP and FRAG), gstat -f "DA|ada" -I 1s
+       systat -vm 1   # the classic one-screen summary (disk, cpu, net, mem)
+
+ C4. NETWORK AUTO-REPAIR — devd(8) runs scripts on events; base rules
+     already handle link/state. Add /etc/devd/*.conf only if needed;
+     write it as:
+       action "/bin/sh /usr/local/sbin/yourscript <what changed>"
+     TIP: `service devd restart` after edits.
+
+ C5. SCREEN SESSIONS THAT SURVIVE LOGOUT:
+       * tmux (already installed) — inside it, ctl-b d to detach.
+       * shared team session: one user, one socket, everyone attaches:
+           tmux new -s ops     # first user
+           tmux attach -t ops  # everyone after
+         ~/.tmux.conf: set -g exit-empty off   # survive last attach
+
+ C6. REMOTE BOOT RECOVERY — serial console is a server superpower:
+       /boot/loader.conf: comconsole_speed="115200" boot_multicons="YES"
+       Plus /etc/ttys: enable ttyu0 → rescue when sshd dies.
+     TIP: then `bectl activate` a known-good env from that console
+         (works even if ZFS / is broken — the loader speaks ZFS).
+
+ C7. SWAP choices (server context):
+       Plain striped/raid swap: fine. ZFS swap volume works but know
+       the deadlock caveats before you rely on it for heavy paging.
+       On this 16GB-laptop-class machine, prefer swap-on-ZFS only as a
+       safety net; look at vm.swap_enabled / vm.swappiness [-> sysctl.conf].
+
+ C8. MONITOR YOUR OWN LISTENING POSTURE (repeat of 5g but as a routine):
+       sockstat -l4 -l6 | awk '{print $7}' | sort | uniq -c | sort -rn
+     Pipe through mail to yourself weekly via periodic if desired.
+
+ C9. UPDATE STRATEGY for a fleet (excellent story in FreeBSD):
+       * freebsd-update from a central mirror, or build your own:
+         poudriere (pkg) — the package builder FreeBSD admins use:
+           pkg install poudriere
+           poudriere ports -c   ;  poudriere bulk -j main -p prod cat/pkg
+         Then point clients at it via pkg.conf URL to your http server.
+         Result: reproducible, signed, custom package sets — the whole
+         point of the ports ecosystem.
+
+ C10. LOG SOUNDNESS: /etc/newsyslog.conf already rotates /var/log. TIP:
+        add a size limit and the "J" flag (compress with bzip2) for your
+        busiest logs (auth.log on a server), e.g.:
+          /var/log/auth.log                600 14     100 * JC
+
+ -----------------------------------------------------------------------------
+ D. WORTH-KNOWING MISC (both roles)
+ -----------------------------------------------------------------------------
+   * /etc/motd — trim it to your team's need-to-know (or empty it via
+     update_motd="NO" [-> rc.conf]).
+   * chflags(1) — "sudo rm can't delete this" flag for critical files:
+       doas chflags schg /etc/rc.conf   # immutable; undo: chflags noschg
+   * pw(8) — everything about users/groups (no adduser-only limits):
+       pw user help ; pw useradd -n ops -m -G wheel -s /bin/sh
+   * idprio/rtprio — run a CPU-hungry task without a nice-level guess:
+       idprio 15 ./slow-job.sh
+   * ktrace/kdump — syscall trace of a misbehaving binary:
+       ktrace -t a curl example.com ; kdump | less
+   * fdescfs/devfs/fd: [-> SOFTWARE.txt §3a] Chromium needs this mount.
+   * gpart(8) — partition editor; `gpart show` is the honest disk map.
+   * watch(8) — snoop another tty (with permission) for support:
+       doas watch -W /dev/ttyp2    # -W allows typing into it
+
+ RECOMMENDED READING ORDER (60–90 min total, then you know 90%):
+   1. man hier        — what lives where
+   2. man wpa_supplicant, rc.subr — config syntax you'll reuse
+   3. man jail, man bhyve      — the two isolation systems
+   4. man zfs, man zpool, man bectl   — storage spine
+   5. man pf, pfctl            — your firewall
+   6. man dtrace               — strange but transformative
+=============================================================================

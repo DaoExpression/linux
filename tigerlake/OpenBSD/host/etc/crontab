@@ -1,0 +1,40 @@
+#	/etc/crontab — gateway
+#
+#	This file is read by cron(8) directly and therefore carries a "user"
+#	column between the schedule and the command.  Use crontab(1) instead
+#	for per-user crontabs (those have no user column).
+#
+#	minute hour mday month wday user command
+
+# ------------------------------------------------------------------ pf hygiene
+# Expire brute-force bans from <bruteforce> (entries carry their own TTL in
+# /var/db/pfban.tsv; the script only removes what has aged out).
+*/5	*	*	*	*	root	/usr/local/sbin/pf-ban.sh expire
+
+# Persist the current ban list so it survives a reboot, and reload it at boot.
+22	4	*	*	*	root	/usr/local/sbin/pf-ban.sh save
+@reboot					root	/usr/local/sbin/pf-ban.sh restore
+
+# ------------------------------------------------------------------ certificates
+# acme-client only re-issues when the certificate is close to expiry; the
+# wrapper reloads httpd/relayd afterwards if anything changed.
+17	4	*	*	*	root	/usr/local/sbin/acme-renew
+
+# ------------------------------------------------------------------ DNS
+# Full AXFR snapshot of the internal zone once a night, so a broken zone file
+# can be diffed against yesterday's.
+45	2	*	*	*	root	/usr/local/sbin/zone-snapshot
+
+# ------------------------------------------------------------------ backups
+# Pull every guest's /etc and the gateway's configuration into storage VM.
+30	3	*	*	*	root	/usr/local/sbin/lab-backup all
+
+# Trim /var/vmm so a runaway qcow2 cannot fill /var.
+0	5	*	*	0	root	/usr/local/sbin/vm-disk-report check
+
+# ------------------------------------------------------------------ reporting
+# Weekly digest to root (mailed off-box by smtpd).
+0	6	*	*	1	root	/usr/local/sbin/lab-report weekly
+
+# Monthly full inventory: packages, disks, pf tables, service status.
+0	7	1	*	*	root	/usr/local/sbin/lab-report monthly

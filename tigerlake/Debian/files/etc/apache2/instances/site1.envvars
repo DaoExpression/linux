@@ -1,0 +1,20 @@
+# /etc/apache2/instances/site1.envvars   (mode 0640 root:root)
+# Environment for the apache2@site1 instance. See files/etc/systemd/system/apache2@.service.
+# The critical lines are the unprivileged user/group and the private pid dir: each instance must
+# run under its OWN user, or the isolation in docs/06 §7 is fiction.
+
+export APACHE_RUN_USER=site1
+export APACHE_RUN_GROUP=site1
+
+export APACHE_PID_FILE=/run/apache2-site1/apache2.pid
+export APACHE_RUN_DIR=/run/apache2-site1
+export APACHE_LOCK_DIR=/var/lock/apache2-site1
+export APACHE_LOG_DIR=/var/log/apache2-site1
+export APACHE_CACHE_DIR=/var/cache/apache2-site1
+
+# Never propagate environment into the server: mod_cgi/env leakage is a classic.
+export APACHE_ARGUMENTS='-D NO_DETACH'
+
+# Locale: keep minimal and deterministic.
+export LANG=C
+export LC_ALL=C

@@ -1,0 +1,35 @@
+#	/etc/rc.conf.local — web
+#
+#	httpd(8) serves the site on 8080 for relayd(8) to proxy.  It does NOT
+#	terminate TLS here: the certificate and the private key live on the
+#	gateway, and the DMZ guest never sees them.  That is the whole reason the
+#	relay exists.
+#
+#	acme-client is not enabled as a daemon — it is run from cron if this guest
+#	ever needs its own certificate (for a backend that must speak TLS).
+
+pf=YES
+sshd_flags=""
+syslogd_flags="-u"
+ntpd_flags=""
+httpd_flags=""			# /etc/httpd.conf
+
+sndiod_flags=NO
+sensorsd_flags=NO
+hotplugd_flags=NO
+identd_flags=NO
+inetd_flags=NO
+lpd_flags=NO
+spamd_flags=NO
+xdm_flags=NO
+smtpd_flags=NO
+unwind_flags=NO
+dhcpd_flags=NO
+radvd_flags=NO
+nsd_flags=NO
+relayd_flags=NO			# TLS termination happens on the gateway
+iked_flags=NO
+vmd_flags=NO
+ftp-proxy_flags=NO
+snmpd_flags=""
+pflow_flags=NO

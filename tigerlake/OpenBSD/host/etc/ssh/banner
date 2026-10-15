@@ -1,0 +1,10 @@
+  ####################################################################
+  #   gw.lab.example.org — authorised use only.                       #
+  #                                                                   #
+  #   All sessions are logged, including the public key used and the  #
+  #   source address.  Administration is permitted only from the      #
+  #   MGMT (10.10.10.0/24) and VPN (10.10.60.0/24) networks.           #
+  #                                                                   #
+  #   If you are not an authorised operator, disconnect now.          #
+  ####################################################################
+

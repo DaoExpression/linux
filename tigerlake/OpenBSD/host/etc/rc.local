@@ -1,0 +1,46 @@
+#!/bin/ksh
+#
+#	/etc/rc.local — gateway
+#
+#	Started by rc(8) after the daemons are up.  Keep it short and idempotent:
+#	rc.local runs on every boot, and anything that fails here fails silently.
+#
+#	Everything in this file exists because a daemon resolved something at
+#	*configuration load* time that later changed.
+
+PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
+export PATH
+
+ext_if="igc0"
+stamp=/var/db/wan-address
+
+# 1. iked(8) resolves its "local" address when iked.conf is loaded.  On a DHCP
+#    uplink that address changes whenever the lease changes, and until iked is
+#    reloaded it advertises a stale address to peers.  Reload it when the WAN
+#    address differs from the one we cached last boot.
+wan_addr=$(ifconfig "$ext_if" 2>/dev/null | awk '/inet /{print $2; exit}')
+if [ -n "$wan_addr" ]; then
+	if [ -f "$stamp" ] && [ "$(cat "$stamp")" != "$wan_addr" ]; then
+		logger -t rc.local "WAN address changed to $wan_addr, reloading iked and relayd"
+		/usr/sbin/rcctl reload iked
+		/usr/sbin/rcctl reload relayd
+	fi
+	echo "$wan_addr" > "$stamp"
+	chmod 644 "$stamp"
+else
+	logger -t rc.local "no IPv4 address on $ext_if yet; iked will use its cached address"
+fi
+
+# 2. The DNS zone is versioned by hand; make the running copy's serial visible
+#    in the logs so "which serial is live?" is one command away.
+if [ -r /var/nsd/zones/lab.example.org.zone ]; then
+	logger -t rc.local "nsd zone serial: $(/usr/bin/awk '/\);/{getline; print $1; exit}' \
+		/var/nsd/zones/lab.example.org.zone)"
+fi
+
+# 3. Make sure the per-host log directory exists before the first guest log
+#    arrives, so a dropped log line cannot be blamed on a missing directory.
+mkdir -p /var/log/remote
+chown root:wheel /var/log/remote
+
+exit 0

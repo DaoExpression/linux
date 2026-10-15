@@ -1,0 +1,35 @@
+#	/etc/rc.conf.local — db
+#
+#	Install PostgreSQL from packages first:
+#	    pkg_add postgresql-server
+#	    /usr/local/bin/initdb -D /var/postgresql/data    (as _postgresql)
+#
+#	The package ships its own rc.d script (/etc/rc.d/postgresql), so enabling
+#	it is "postgresql_flags=..." exactly like a base daemon.
+
+pf=YES
+sshd_flags=""
+syslogd_flags="-u"
+ntpd_flags=""
+postgresql_flags=""		# package daemon; see /etc/rc.d/postgresql
+
+sndiod_flags=NO
+sensorsd_flags=NO
+hotplugd_flags=NO
+identd_flags=NO
+inetd_flags=NO
+lpd_flags=NO
+spamd_flags=NO
+xdm_flags=NO
+httpd_flags=NO
+smtpd_flags=NO
+unwind_flags=NO
+dhcpd_flags=NO
+radvd_flags=NO
+nsd_flags=NO
+relayd_flags=NO
+iked_flags=NO
+vmd_flags=NO
+ftp-proxy_flags=NO
+snmpd_flags=""			# polled by mon
+pflow_flags=NO

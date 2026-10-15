@@ -1,0 +1,152 @@
+=============================================================================
+ PRIVACY — i7-11390H FreeBSD laptop
+=============================================================================
+ Complements: SECURITY-LOGS.txt, pf.conf, rc.conf
+ Facts checked against FreeBSD man pages (pkg.conf(5), periodic(8)), Oct 2026.
+
+ -----------------------------------------------------------------------------
+ 0. THE MYTH YOU MAY HAVE HEARD: "periodic sends reports to FreeBSD servers"
+ -----------------------------------------------------------------------------
+ FALSE — worth knowing exactly what does and does not leave this laptop:
+
+ CONTACTS OUTSIDE (plain HTTPS downloads, no usage statistics):
+   * pkg            — downloads from official mirrors (pkg.FreeBSD.org).
+                      HTTP user-agent is just "pkg/<version>" (pkg.conf(5));
+                      it does NOT report which packages you installed.
+   * freebsd-update — downloads base-system patches; pure download, no
+                      telemetry, and only when YOU run it.
+   * ntpd           — time sync; pool servers see your IP.
+   * DNS            — every resolver sees the hostnames you ask about;
+                      usually the biggest real leak (see section 2).
+
+ SENDS NOTHING ANYWHERE:
+   * periodic(8)    — daily/weekly digests are written to root's LOCAL mail
+                      spool (/var/mail/root). Nothing is uploaded.
+                      To actually read them: doas mail    (or: less the file)
+                      PRIVACY NOTE: receives nothing—the report only leaves
+                      the box if you set up mail forwarding in
+                      /etc/mail/aliases yourself. Default: it never does.
+   * syslogd        — our rc.conf runs it with "-ss": binds NO network
+                      socket at all. Logs stay local, forever.
+
+ -----------------------------------------------------------------------------
+ 1. MIRROR & UPDATE PRIVACY (small, honest footprints)
+ -----------------------------------------------------------------------------
+ * The mirror sees your IP + which files you fetch + timestamps. That's it.
+   If you want even that hidden: run `pkg update && pkg upgrade` and
+   `freebsd-update fetch install` ONCE A WEEK over a VPN/Tor session
+   instead of casually throughout the week.
+
+ -----------------------------------------------------------------------------
+ 2. DNS — the leak that matters most on a laptop
+ -----------------------------------------------------------------------------
+ Your resolver logs every hostname; websites are ~90% identified this way.
+ A home router usually forwards everything to your ISP.
+
+ Best option: run unbound locally with DNS-over-TLS (external observers
+ see only a TLS stream to one resolver):
+     doas pkg install -y unbound
+     /usr/local/etc/unbound/unbound.conf:
+         server:
+             tls-cert-bundle: /etc/ssl/certs
+             do-not-query-localhost: no
+         forward-zone:
+             name: "."
+             forward-tls-upstream: yes
+             forward-addr: 1.1.1.1@853#cloudflare-dns.com
+             # or:  9.9.9.9@853#dns.quad9.net
+     doas sysrc unbound_enable=YES && doas service unbound start
+ Then point /etc/resolv.conf at 127.0.0.1 and pin it in pf so nothing
+ leaks past your local resolver (add to pf.conf):
+     # allow querying only the local resolver:
+     pass out on lo0 proto udp to port 53 keep state
+     # kill all other outbound plain-DNS (stops accidental bypasses):
+     block drop out on $uplink proto udp to any port 53
+     block drop out on $uplink proto tcp to any port 53
+
+ Simpler (weaker) alternative: just set /etc/resolv.conf to a recursive,
+ honest resolver (1.1.1.1 / 9.9.9.9). The network still sees plain DNS.
+
+ Browser-level DoH (works regardless):
+   Firefox about:config: network.trr.mode=2,
+     network.trr.uri=https://mozilla.cloudflare-dns.com/dns
+   Chromium: Settings > Privacy > Use secure DNS.
+
+ -----------------------------------------------------------------------------
+ 3. NETWORK FINGERPRINT REDUCTION (no packages needed)
+ -----------------------------------------------------------------------------
+ * Wi-Fi MAC randomization: FreeBSD doesn't rotate MACs automatically, but
+   you can pin a locally-administered (02:...) address per network, which
+   stops the true hardware MAC from leaking. In rc.conf:
+     create_args_wlan0="wlandev iwlwifi0 wlanaddr 02:11:22:33:44:55"
+   (wlan(4) accepts wlanaddr at creation time; use a different fake MAC
+    per network you trust. Revert by removing the wlanaddr part.)
+
+ * Hostname: don't embed your name. rc.conf "freebsd-desktop" is fine.
+
+ * Local-only account visibility — add to /etc/sysctl.conf:
+     security.bsd.see_other_uids=0        # users can't see other procs
+     security.bsd.see_other_gids=0
+     security.bsd.unprivileged_read_msgbuf=0
+     security.bsd.unprivileged_ptrace=0   # no ptrace on others' procs
+   Network-side, make scans look like a dead host:
+     net.inet.tcp.blackhole=2
+     net.inet.udp.blackhole=1
+   (All standard, documented, no side effects on a single-user desktop.)
+
+ * pf already sends RST for blocked inbound TCP; with blackhole on top,
+   port scanners see mostly void.
+
+ -----------------------------------------------------------------------------
+ 4. SERVICES THAT CAN LEAK (rc.conf hygiene)
+ -----------------------------------------------------------------------------
+ Already set for you:
+   sendmail_enable="NONE"        # no MTA ever listening or submitting
+   syslogd_flags="-ss"           # syslog binds no socket
+ Extra ones worth pinning (run once, as root):
+     doas sysrc rpcbind_enable=NO
+     doas sysrc nfs_client_enable=NO
+     doas sysrc sendmail_submit_enable=NO
+ Then audit listeners after every upgrade (see SECURITY-LOGS.txt 5g):
+     sockstat -l4 -l6
+
+ -----------------------------------------------------------------------------
+ 5. BROWSERS — the real privacy battle happens here
+ -----------------------------------------------------------------------------
+ Firefox (about:config):
+   privacy.resistFingerprinting = true    # RFP: tz/canvas/screen jitter
+   network.cookie.cookieBehavior  = 5     # Total Cookie Protection
+   browser.safebrowsing.malware.enabled = true   # keep ON: worth the
+                                          # (encrypted, hashed) URL checks
+   webgl.disabled = true                  # very effective, breaks some
+                                          # sites — try it last
+ Chromium: Settings > Privacy & Security:
+   Third-party cookies: Block all; run the "Privacy checkup";
+   enable "Use secure DNS" (section 2).
+ Note: prefer Firefox for hostile/unfamiliar sites — its sandbox and its
+ per-site process split are more mature on FreeBSD.
+
+ -----------------------------------------------------------------------------
+ 6. JAILS & PRIVACY SIDE CHANNELS (if you adopt pf.conf §8)
+ -----------------------------------------------------------------------------
+ Jails share the host kernel: a misconfigured jail can read host MACs,
+ CPU quirks, kernel state. Practical rules:
+   * Per-jail devfs ruleset: expose only null, zero, random, log — never
+     raw disk or full /dev.
+   * Don't run binary downloads from random websites directly on the host.
+   * For genuinely untrusted code, a bhyve VM is a far stronger boundary
+     (own kernel) than any jail. bhyve is in the base system.
+
+ -----------------------------------------------------------------------------
+ 7. SUMMARY: TELEMETRY LEVEL OF A FREEBSD DESKTOP
+ -----------------------------------------------------------------------------
+   Base system ... 0 — nothing phones home; updates happen only when you
+                     run freebsd-update.
+   pkg ............ 0 — downloads only; user-agent is "pkg/<version>".
+   periodic ....... 0 — local files / local root mail only.
+   Anything else that talks to the network = a program you chose.
+   Audit it live:
+     doas tcpdump -n -i wlan0 not host <your-router-ip> and not arp
+   On a healthy setup you'll see: NTP, your DoT resolver, pkg downloads
+   you started, and nothing else.
+=============================================================================

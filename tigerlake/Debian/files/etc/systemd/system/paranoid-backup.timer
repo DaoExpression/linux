@@ -1,0 +1,14 @@
+# /etc/systemd/system/paranoid-backup.timer
+
+[Unit]
+Description=Nightly encrypted backup
+Documentation=file:///etc/systemd/system/paranoid-backup.service
+
+[Timer]
+OnCalendar=*-*-* 02:30:00
+RandomizedDelaySec=20m
+Persistent=true
+Unit=paranoid-backup.service
+
+[Install]
+WantedBy=timers.target

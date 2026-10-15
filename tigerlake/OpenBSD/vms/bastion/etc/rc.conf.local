@@ -1,0 +1,34 @@
+#	/etc/rc.conf.local — bastion
+#
+#	A jump host should run as little as possible: sshd and the local firewall,
+#	nothing else.  Every daemon left at its default is a daemon you have to
+#	patch and explain, and this is the one guest a compromised workstation
+#	reaches first.
+
+pf=YES
+sshd_flags=""
+pflogd_flags="-s 160 -f /var/log/pflog"
+syslogd_flags="-u"		# also files its own logs locally for forensics
+ntpd_flags=""			# keep the gateway's time on the jump host
+
+# Nothing else listens.
+httpd_flags=NO
+smtpd_flags=NO
+unwind_flags=NO			# resolution goes to the dns VM
+ftp-proxy_flags=NO
+snmpd_flags=NO			# the bastion is monitored over ssh, not SNMP
+sndiod_flags=NO
+sensorsd_flags=NO
+hotplugd_flags=NO
+identd_flags=NO
+inetd_flags=NO
+lpd_flags=NO
+spamd_flags=NO
+xdm_flags=NO
+vmd_flags=NO			# guests are not nested here
+dhcpd_flags=NO
+radvd_flags=NO
+nsd_flags=NO
+iked_flags=NO
+relayd_flags=NO
+pflow_flags=NO

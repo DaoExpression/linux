@@ -1,0 +1,35 @@
+# /etc/systemd/system/remount-boot-ro.service
+# TIER 3, OPT-IN.
+#
+# Remounts /boot read-only after boot. /boot holds your kernel, initramfs/UKI and cmdline; if an
+# attacker can write there they can boot their own kernel - unless Secure Boot stops them, which is
+# the primary control (docs/03 §2). This is the second lock.
+#
+# Workflow when you install kernels:
+#   sudo systemctl stop remount-boot-ro.service
+#   sudo mount -o remount,rw /boot
+#   sudo apt-get install --reinstall linux-image-amd64 && sudo kernel-install ... && sudo sbctl sign ...
+#   sudo mount -o remount,ro /boot
+#   sudo systemctl start remount-boot-ro.service
+#
+# Or simply run scripts/install-hardening.sh --unsafe-remount-boot, which does exactly that.
+
+[Unit]
+Description=Remount /boot read-only (Tier 3)
+DefaultDependencies=no
+After=local-fs.target
+Before=sysinit.target shutdown.target
+Conflicts=shutdown.target
+ConditionPathIsMountPoint=/boot
+RequiresMountsFor=/boot
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/mount -o remount,ro /boot
+ExecStartPost=/bin/sh -c 'findmnt -no OPTIONS /boot | grep -qE "(^|,)ro(,|$)" || { echo "/boot is NOT read-only"; exit 1; }'
+ProtectSystem=strict
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=sysinit.target

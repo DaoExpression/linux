@@ -1,0 +1,60 @@
+# /etc/systemd/system/apache2@.service
+# One Apache instance per security domain (docs/06 §7). OPTIONAL - only use this if you actually
+# host multiple sites that must not read each other's files. A single-purpose server does NOT need
+# this, and every extra instance is another process, user, port and config to keep correct.
+#
+# Usage (instance name "site1"):
+#   sudo adduser --system --group --no-create-home --shell /usr/sbin/nologin site1
+#   sudo install -d -o site1 -g site1 -m 0750 /srv/site1 /var/log/apache2-site1 /run/apache2-site1
+#   sudo cp files/etc/apache2/instances/site1.envvars /etc/apache2/instances/site1.envvars
+#   sudo cp files/etc/apache2/instances/site1.conf    /etc/apache2/instances/site1.conf
+#   sudo systemctl enable --now apache2@site1
+#   sudo systemd-analyze security apache2@site1 | tail -3
+
+[Unit]
+Description=Apache HTTP Server (instance %i)
+Documentation=https://httpd.apache.org/docs/2.4/
+After=network.target remote-fs.target nss-lookup.target
+ConditionPathExists=/etc/apache2/instances/%i.conf
+ConditionPathExists=/etc/apache2/instances/%i.envvars
+
+[Service]
+Type=notify
+EnvironmentFile=/etc/apache2/instances/%i.envvars
+ExecStartPre=/usr/sbin/apache2ctl -f /etc/apache2/instances/%i.conf -t
+ExecStart=/usr/sbin/apache2 -f /etc/apache2/instances/%i.conf -DFOREGROUND
+ExecReload=/usr/sbin/apache2ctl -f /etc/apache2/instances/%i.conf -k graceful
+ExecStop=/bin/kill -WINCH ${MAINPID}
+KillSignal=SIGCONT
+PrivateTmp=true
+Restart=on-failure
+RestartSec=5s
+
+# Same sandbox as the main unit, with per-instance paths. Keep this list identical in spirit to
+# files/etc/systemd/system/apache2.service.d/99-paranoid.conf so the two instances are equally
+# hardened - a weaker second instance is how "isolation" quietly becomes a downgrade.
+ProtectSystem=strict
+ProtectHome=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectProc=invisible
+ProcSubset=pid
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+NoNewPrivileges=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources @obsolete @mount @debug @cpu-emulation @swap @keyring
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_SETUID CAP_SETGID CAP_CHOWN CAP_DAC_OVERRIDE CAP_FOWNER CAP_KILL
+ReadWritePaths=/var/log/apache2-site1 /run/apache2-site1 /var/cache/apache2-site1 /srv/%i
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

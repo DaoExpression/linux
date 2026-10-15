@@ -1,0 +1,24 @@
+#	$OpenBSD: hosts,v 1.9 $
+#
+# Host Database
+# This file should contain the addresses and aliases for local hosts that
+# share this file.  Replace "my.domain" with the domain name of your network.
+#
+127.0.0.1	localhost
+::1		localhost
+127.0.1.1	gw.lab.example.org	gw
+
+# Lab hosts.  The authoritative copy for these lives on the dns VM
+# (see vms/dns/etc/nsd/zones/); keep them here too so that the gateway can
+# resolve admins even when unwind/nsd are down.
+10.10.10.1	gw.lab.example.org		gw
+10.10.10.50	admin.lab.example.org		admin
+
+10.10.40.20	web.lab.example.org		web
+10.10.40.21	mail.lab.example.org		mail
+
+10.10.50.10	bastion.lab.example.org		bastion
+10.10.50.11	dns.lab.example.org		dns
+10.10.50.12	db.lab.example.org		db
+10.10.50.13	storage.lab.example.org	storage
+10.10.50.14	mon.lab.example.org		mon

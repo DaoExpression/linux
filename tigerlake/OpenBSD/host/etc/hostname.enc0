@@ -1,0 +1,4 @@
+#	IPsec virtual interface created by iked(8)/ipsec(4).  pf.conf matches
+#	VPN client traffic on "enc0".  There is no address to configure: the
+#	road-warrior pool lives in /etc/iked.conf ("config address").
+up

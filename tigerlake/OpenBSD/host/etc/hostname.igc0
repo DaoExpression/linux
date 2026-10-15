@@ -1,0 +1,6 @@
+#	WAN — DHCPv4 + SLAAC from the ISP via dhcpleased(8)/slaacd(8).
+#	The public address is whatever the ISP hands out; the example configs
+#	use 203.0.113.10 as a stand-in (RFC 5737 documentation range).
+inet autoconf
+inet6 autoconf -autoconfprivacy
+up

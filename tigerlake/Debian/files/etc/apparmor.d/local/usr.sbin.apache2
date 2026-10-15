@@ -1,0 +1,71 @@
+# /etc/apparmor.d/local/usr.sbin.apache2
+# Added to Debian's shipped /etc/apparmor.d/usr.sbin.apache2 profile via its 'local/' include, so
+# package upgrades do not fight your changes.
+#
+# Philosophy: Debian's stock Apache profile is already good (it denies most of the filesystem). This
+# file TIGHTENS it for our layout and ADDS the denies that matter for a web server. Everything here
+# is a deny or a narrowly scoped allowance - never a blanket '/** rw'.
+#
+# Reload:  sudo apparmor_parser -r /etc/apparmor.d/usr.sbin.apache2
+# Check:   sudo aa-status --verbose | sed -n '/apache2/,+6p'
+
+# --- the web content this server is allowed to read ---
+/var/www/** r,
+/srv/** r,
+
+# --- denied, explicitly, even if the base profile would allow it -------------------------
+# Private keys beyond the certificate Apache must serve... actually Apache's master reads
+# /etc/letsencrypt/live/*/privkey.pem; keep that. Deny the ACME account keys and archives.
+deny /etc/letsencrypt/accounts/** rwkl,
+deny /etc/letsencrypt/archive/** w,
+deny /etc/ssl/private/*.key w,
+deny /root/** rwkl,
+deny /home/** rwkl,
+deny /etc/shadow r,
+deny /etc/gshadow r,
+deny /etc/sudoers r,
+deny /etc/ssh/** rwkl,
+deny /etc/wireguard/** rwkl,
+deny /etc/nftables.conf rwkl,
+deny /var/lib/aide/** rwkl,
+deny /var/log/audit/** rwkl,
+deny /proc/sys/** w,
+deny /sys/** w,
+deny /boot/** w,
+deny /etc/systemd/** w,
+deny /usr/lib/systemd/system/** w,
+deny /usr/** w,
+
+# --- no shells, no interpreters, no compilers from the web process ------------------------
+deny /bin/*sh ix,
+deny /usr/bin/*sh ix,
+deny /bin/dash ix,
+deny /usr/bin/python3* ix,
+deny /usr/bin/perl* ix,
+deny /usr/bin/php* ix,
+deny /usr/bin/node* ix,
+deny /usr/bin/gcc* ix,
+deny /usr/bin/cc ix,
+deny /usr/bin/make ix,
+
+# --- capabilities: none needed beyond binding the port (Apache drops to www-data) ---------
+deny capability sys_admin,
+deny capability sys_module,
+deny capability sys_ptrace,
+deny capability sys_rawio,
+deny capability dac_read_search,
+deny capability net_raw,
+deny capability bpf,
+deny capability perfmon,
+deny capability sys_chroot,
+deny capability mknod,
+
+# --- network: outbound is filtered by nftables, but keep AppArmor honest too --------------
+deny network raw,
+deny network packet,
+deny network netlink,
+
+# Notes on what is NOT denied on purpose:
+#  * /var/log/apache2/** w  -> Debian's profile grants it; required for logging.
+#  * /run/apache2/** rw      -> the pid/socket directory.
+#  * /etc/ssl/certs/** r      -> CA bundle for outbound TLS (ACME/OCSP if you use them).

@@ -1,0 +1,48 @@
+# files/etc/default/ima-policy  ->  install as /etc/ima/ima-policy
+#
+# MEASUREMENT ONLY. Docs/03 §6 explains why: on this machine (firmware TPM, no attestation service,
+# no remote verifier) IMA can give you *evidence* that a file was measured before it executed, but it
+# cannot give you *enforcement* you can trust. Enforcement (ima_appraise) requires:
+#   * a key you control, enrolled before anything is measured
+#   * the same key available in the initramfs for the earliest measurements
+#   * an answer for what happens when a package upgrade changes a measured file
+# Get that wrong and the machine boots into a broken state or, worse, into permissive-fallback mode
+# that looks like it is working. So: measure now, decide about appraisal later, deliberately.
+#
+# Install:
+#   sudo install -d -m 0755 /etc/ima
+#   sudo cp files/etc/default/ima-policy /etc/ima/ima-policy
+#   echo 'ima_policy=tcb' | sudo tee -a /etc/kernel/cmdline    # or /etc/default/grub's cmdline
+#   sudo update-initramfs -u -k all
+#   sudo reboot
+# Read the results:
+#   sudo head /sys/kernel/security/ima/ascii_runtime_measurements
+#   sudo cat /sys/kernel/security/ima/policy
+#
+# The policy below measures: files read by privileged processes, files mapped for execution,
+# kernel modules, and the machine's own configuration-critical paths. It does NOT measure every
+# file read by every process (that is the 'tcb' vs 'all' distinction) because the volume would be
+# unmanageable and would fill the measurement log for no benefit.
+#
+# To measure more later, switch 'ima_policy=tcb' to 'ima_policy=appraise_tcb' ONLY after you have
+# read the whole of docs/03 §6 and tested in a VM.
+
+dont_measure fsmagic=0x9fa0
+dont_measure fsmagic=0x62656572
+dont_measure fsmagic=0x64626720
+dont_measure fsmagic=0x01021994
+dont_measure fsmagic=0x858458f6
+dont_measure fsmagic=0x73636673
+dont_measure fsmagic=0xf97cff8c
+dont_measure fsmagic=0x6e736673
+dont_measure fsmagic=0xde5e81e4
+dont_measure fsmagic=0x27e0eb
+dont_measure fsmagic=0x958458f6
+dont_measure fsmagic=0x1373
+measure func=MMAP_CHECK mask=MAY_EXEC
+measure func=BPRM_CHECK mask=MAY_EXEC
+measure func=FILE_CHECK mask=MAY_READ uid=0
+measure func=MODULE_CHECK
+measure func=FIRMWARE_CHECK
+measure func=POLICY_CHECK
+measure func=KEXEC_KERNEL_CHECK

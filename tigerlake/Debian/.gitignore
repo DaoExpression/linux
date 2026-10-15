@@ -1,0 +1,19 @@
+# Never commit key material, backup headers or logs from a live machine.
+*.key
+*.pem
+*.crt
+PK.*
+KEK.*
+db.*
+*.auth
+*.img
+*.RECOVERY
+*.sha512
+luks-header-*
+sbkeys-*.tar.gz
+wireguard/*.key
+*.log
+*.ruleset
+.ssh/
+__pycache__/
+*.pyc

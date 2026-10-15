@@ -1,0 +1,71 @@
+# /var/postgresql/data/postgresql.conf — settings for the lab db guest
+# ---------------------------------------------------------------------------
+#
+# DO NOT COPY THIS FILE OVER postgresql.conf.  It is an *append*: the package's
+# own postgresql.conf is a long commented file, and replacing it loses settings
+# that change with every major version.
+#
+# Merge it with:
+#     cat /etc/postgresql/postgresql.conf.append >> \
+#         /var/postgresql/data/postgresql.conf
+#     rcctl restart postgresql
+#
+# Then confirm what actually took effect:
+#     psql -c 'show max_connections' -c 'show shared_buffers'
+# ---------------------------------------------------------------------------
+
+# --- connections -------------------------------------------------------------
+# The guest has 2G of RAM (see vm.conf).  PostgreSQL is the only real consumer:
+# shared_buffers is the single most important setting here, and 25% of RAM is
+# the conventional starting point.
+listen_addresses = '10.10.50.12'	# bind the SRV address only.  NOT '*',
+					# which would also expose it on fd00::.
+port = 5432
+max_connections = 100			# web + mon + an admin's psql; not 500
+
+shared_buffers = 512MB			# ~25% of 2G
+effective_cache_size = 1536MB		# planner's guess at OS+PG cache
+work_mem = 8MB				# per sort/hash, per connection: 100 × 8MB is
+					# the ceiling, so do not raise this blindly
+maintenance_work_mem = 128MB
+
+# --- write ahead log ----------------------------------------------------------
+wal_level = replica			# "replica" keeps pg_basebackup viable;
+					# "logical" only if you need it
+max_wal_size = 1GB
+min_wal_size = 160MB
+checkpoint_completion_target = 0.9
+# The guests sit on qcow2 files on the host's NVMe: the write cache is real, so
+# synchronous_commit can stay on (the default).  Turning it off is a data-loss
+# decision, not a performance tweak.
+synchronous_commit = on
+
+# --- planner ------------------------------------------------------------------
+random_page_cost = 1.1			# qcow2 on NVMe: closer to sequential than
+					# the spinning-rust default of 4.0
+effective_io_concurrency = 200
+
+# --- logging ------------------------------------------------------------------
+# The logs are shipped to the gateway's central syslog; PostgreSQL's own
+# collector adds the detail that matters during an incident.
+logging_collector = on
+log_directory = 'log'
+log_filename = 'postgresql-%Y-%m-%d.log'
+log_min_duration_statement = 500	# log anything slower than 500ms
+log_checkpoints = on
+log_connections = on
+log_disconnections = on
+log_lock_waits = on
+log_temp_files = 0			# any temp file is worth knowing about
+log_autovacuum_min_duration = 250
+
+# --- autovacuum ---------------------------------------------------------------
+autovacuum = on
+autovacuum_max_workers = 3
+autovacuum_naptime = 60s
+
+# --- locale and timezone ------------------------------------------------------
+# UTC everywhere: the gateway, the guests and every log line.  Local time is a
+# presentation problem, not a storage problem.
+timezone = 'UTC'
+log_timezone = 'UTC'

@@ -1,0 +1,37 @@
+#	/etc/rc.conf.local — mon
+#
+#	The monitoring guest runs the two base daemons that make the lab
+#	observable — snmpd(8) for its own metrics, syslogd(8) as a second log sink
+#	— plus collectd from packages for polling everything else.
+#
+#	    pkg_add collectd
+#
+#	The reports and the weekly digest are plain shell scripts driven by
+#	/etc/crontab (see the copy in this tree), not another daemon.
+
+pf=YES
+sshd_flags=""
+syslogd_flags="-u"		# a second copy of every guest's logs
+ntpd_flags=""
+snmpd_flags=""			# this host is polled too; the lab is symmetric
+collectd_flags=""		# package daemon; /etc/collectd.conf
+
+sndiod_flags=NO
+sensorsd_flags=NO
+hotplugd_flags=NO
+identd_flags=NO
+inetd_flags=NO
+lpd_flags=NO
+spamd_flags=NO
+xdm_flags=NO
+httpd_flags=NO			# the dashboard lives on the web guest
+smtpd_flags=NO
+unwind_flags=NO
+dhcpd_flags=NO
+radvd_flags=NO
+nsd_flags=NO
+relayd_flags=NO
+iked_flags=NO
+vmd_flags=NO
+ftp-proxy_flags=NO
+pflow_flags=NO

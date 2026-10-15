@@ -1,0 +1,35 @@
+#	/etc/crontab — mail guest
+#
+#	Read by cron(8) directly, so it carries a "user" column.  This file
+#	REPLACES the one the installer wrote: diff it against the stock file on
+#	your release before deploying, in case an entry was added upstream.
+#
+#	minute hour mday month wday user command
+
+# ------------------------------------------------------------------ certificates
+# acme-client(1) only re-issues when the certificate is close to expiry; the
+# wrapper reloads smtpd and dovecot when a file actually changed, and logs the
+# expiry date either way.
+17	4	*	*	*	root	/usr/local/sbin/acme-renew
+
+# ------------------------------------------------------------------ queue hygiene
+# Report anything stuck in the mail queue: a queue that is not empty means
+# either a broken relay or a bounce loop, and both get worse with time.
+0	*/4	*	*	*	root	/usr/sbin/smtpctl show queue \
+	| /usr/bin/awk 'NR > 3 { found = 1 } END { if (found) exit 1 }' \
+	|| /usr/bin/logger -t cron -p mail.warning "mail queue is not empty (see smtpctl show queue)"
+
+# ------------------------------------------------------------------ mailbox checks
+# dovecot's own health check.  A failure here is worth an email, because the
+# alternative is discovering it when a client cannot log in.
+30	6	*	*	*	root	/usr/local/bin/doveadm auth cache flush >/dev/null 2>&1
+
+# ------------------------------------------------------------------ notes
+# * Mailboxes are backed up with doveadm, not by copying files while dovecot is
+#   running.  If you add that, run it from here:
+#	0	2	*	*	*	root	/usr/local/sbin/mailbackup
+#   and have mailbackup write to the storage guest so the backup does not sit
+#   on the disk it is protecting.
+# * Nothing in this file sends mail to the internet.  System mail goes through
+#   this guest's own smtpd(8), which relays it out over the network — that is
+#   why the queue check above matters.

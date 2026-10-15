@@ -1,0 +1,305 @@
+=============================================================================
+ JAILS WITHOUT EXTRA SOFTWARE — jail(8) + jail.conf: classic and thin
+=============================================================================
+ For: i7-11390H FreeBSD 14.x laptop. Complements: jail.conf (-> /etc/jail.conf,
+ this directory), pf.conf §8 (jail traffic / NAT), rc.conf (bridge0 =
+ 10.0.100.1/24, host = .1), sysctl.conf (jail sysctl block), ZFS-SSD.txt
+ (snapshots/clones), README.md.
+ NO bastille, iocage, ezjail, podman — everything below is base system +
+ tar + jail.conf. Syntax verified against jail.conf(5)/jail(8), FreeBSD 14.3.
+
+ -----------------------------------------------------------------------------
+ 1. WHAT A JAIL IS — and which flavour you want
+ -----------------------------------------------------------------------------
+ A jail is a kernel-level prison: a directory becomes the root filesystem,
+ processes inside are isolated (own PID view, own mounts, own IPs), but the
+ KERNEL is shared with the host. Not a VM — lighter, faster, less magic.
+   jls              running jails (jid = jail id, used by jexec)
+   jexec <j> cmd    run a command inside jail <j>
+ Jail names: one word, NO dots (www, db, build0 — not "my.jail").
+
+ Two flavours, both shipped in jail.conf of this directory:
+
+   CLASSIC ("fat")                THIN
+   ---------------------------   ----------------------------------------
+   full base.txz copy per jail   skeleton dirs; base mounted nullfs ro
+   owns everything under its     owns ONLY: /etc /var /tmp /root /home
+   root                          /usr/local (rest = window on $template)
+   ~0.5-1 GB each                a few MB each
+   update each jail alone        update the template once, all see it
+   build: mkdir + tar            build: nothing (jail -c does it all)
+   best when: long-lived,        best when: many similar jails, quick
+   maximum independence          experiments, tight disk
+
+ NOTE on versions: jails share the host kernel. Inside a jail `uname -r`
+ shows the HOST kernel; the jail's own userland version is
+ `freebsd-version -u`. Always build jails from the SAME release as the host
+ (`uname -r` on the host, e.g. 14.3-RELEASE).
+
+ One-TIME HOST SETUP (do this once, before any jail):
+
+ a) Directories (both flavours need this):
+     doas mkdir -p /usr/local/jails
+
+    ZFS install (the default choice of this guide)? Give the jail root its
+    own dataset — and the template an extra one so §8 can snapshot it
+    (then you can skip the mkdir above — the dataset mounts there):
+     doas zfs create -o mountpoint=/usr/local/jails zroot/jails
+     doas zfs create zroot/jails/template
+    (pool not called zroot? `zpool list`. UFS install? skip to b, mkdir only.)
+
+ b) The TEMPLATE — one unpacked base.txz that thin jails mount and §8
+    snapshots. $REL must equal the host's release:
+     REL=$(uname -r)                       # e.g. 14.3-RELEASE
+     cd /tmp
+     fetch https://download.freebsd.org/releases/amd64/$REL/base.txz
+     fetch https://download.freebsd.org/releases/amd64/$REL/base.txz.sha256
+     sha256 -c base.txz.sha256             # must answer: OK
+     doas mkdir -p /usr/local/jails/template
+     doas tar -xpf base.txz -C /usr/local/jails/template    # -p keeps modes
+     ls /usr/local/jails/template          # bin etc lib libexec rescue sbin usr var
+    TIP: keep /tmp/base.txz around — §2 and §10 reuse it.
+    TIP: the template is never booted; treat it as read-only.
+
+ -----------------------------------------------------------------------------
+ 2. CLASSIC JAIL "www" — full copy
+ -----------------------------------------------------------------------------
+     doas mkdir -p /usr/local/jails/www
+     doas tar -xpf /tmp/base.txz -C /usr/local/jails/www
+     doas jail -f /etc/jail.conf -c www      # start it (jail.conf: §3 block)
+     jls                                     # ->  www  /usr/local/jails/www
+     doas jexec www /bin/sh                  # you are now INSIDE
+     hostname                                # www.jail
+     exit
+
+ What jail.conf did: checked the filesystem exists (test -x .../bin/sh),
+ made /dev, copied a resolv.conf if needed, aliased 10.0.100.10 on bridge0,
+ mounted devfs, then ran `sh /etc/rc` INSIDE the jail.
+
+ First steps inside the jail (as root, in the jexec shell):
+     sysrc sendmail_enable=NONE        # matches the host's choice
+     sysrc sshd_enable=YES             # only if you really need sshd in here
+     pw passwd root                    # a password, if you'll log in via ssh
+     echo '10.0.100.10 www.jail www' >> /etc/hosts
+ DO NOT set hostname= in the jail's rc.conf — jail.conf's host.hostname is
+ the source of truth; changing it from inside needs allow.set_hostname.
+ Services you start inside (service nginx start) run inside the jail only.
+
+ ZFS shortcut instead of tar (see §8): clone the template snapshot.
+ UFS/other: tar as above. jail.conf needs no change either way.
+
+ -----------------------------------------------------------------------------
+ 3. THIN JAIL "db" — skeleton + read-only base
+ -----------------------------------------------------------------------------
+     doas jail -f /etc/jail.conf -c db       # that's ALL — first start
+                                             # builds the skeleton itself
+     mount | grep /usr/local/jails/db        # ~10 nullfs ro + devfs mounts
+     doas jexec db /bin/sh
+     ls /                                    # bin etc lib ... var
+     mount | grep 'jails/db/bin'             # -> nullfs on .../template/bin
+     freebsd-version -u                      # db's USERLAND version
+     uname -r                                # host KERNEL version (shared)
+     exit
+
+ What jail.conf does on start (in order):
+   1. test that $template exists (fail fast, no half-made jail)
+   2. mkdir the skeleton: bin dev home lib libexec media mnt proc rescue
+      root sbin tmp usr/* var/* (cron/db/empty/log/mail/run/spool/tmp...)
+   3. chmod 1777 tmp var/tmp
+   4. cp -R $template/etc  ->  the jail's own /etc  (only if not there yet)
+   5. copy a resolv.conf   (only if the jail has none / it is empty)
+   6. alias 10.0.100.20 on bridge0 (host side)
+   7. nullfs-mount base dirs READ-ONLY from $template (bin sbin lib libexec
+      rescue usr/bin usr/sbin usr/lib usr/libexec usr/share)
+   8. mount.devfs (ruleset 4), then run `sh /etc/rc` INSIDE the jail
+ On stop everything unmounts in reverse; skeleton and /etc stay.
+
+ What the jail owns (writable): /etc /var /tmp /root /home /usr/local
+ Everything else: same bytes as the template, visible read-only.
+ TIP: don't cd into jail dirs FROM THE HOST — a shell sitting in
+ ${path}/usr/bin blocks the unmount at `jail -r`.
+
+ Outbound network and DNS: §5. Packages: §6.
+
+ -----------------------------------------------------------------------------
+ 4. CONTROLS — start, stop, enter, boot
+ -----------------------------------------------------------------------------
+ Direct (works always, no rc needed):
+     doas jail -f /etc/jail.conf -c www        # start one
+     doas jail -f /etc/jail.conf -r www        # stop one  (graceful rc.shutdown)
+     doas jail -f /etc/jail.conf -e :          # list every jail this file defines
+     doas jail -f /etc/jail.conf -cv db        # start VERBOSE: prints mkdir,
+                                               # mount, jail_set — best debugger
+     doas jexec www /bin/sh                    # command inside a running jail
+     jls ; jls -j db ; jexec db ps aux
+
+ Via rc (needed for BOOT; also powers `service jail ...`):
+     doas sysrc jail_enable="YES"
+     doas sysrc jail_list="www db"             # start only these at boot
+                                               # (leave '' = ALL in jail.conf)
+     doas sysrc jail_parallel_start="YES"      # optional: start together
+     service jail start|stop|restart|status www
+     service jail console www                  # root shell inside (login -f root)
+ rc.conf of this repo ships all of that COMMENTED — jails stay off until you
+ flip them. Create the jail filesystems (§2/§3) BEFORE enabling boot start.
+
+ -----------------------------------------------------------------------------
+ 5. NETWORKING + FIREWALL — bridge0, NAT vs bridged, DNS
+ -----------------------------------------------------------------------------
+ Addresses (shipped defaults):
+   bridge0 = 10.0.100.1/24 on the host (rc.conf), www = .10, db = .20
+   (change them in jail.conf if your LAN already uses 10.0.100.0/24).
+ Non-VNET jails SHARE the host's stack and routing table: outbound packets
+ leave via the host's default route with the jail's source IP — so the jail
+ needs either NAT (pf rewrites source) or an address valid on your LAN.
+ Host <-> jail traffic is local (lo0, skipped by pf) — that just works.
+
+ Pick ONE mode — both recipes are already written as comments in the files:
+
+ A) NAT (recommended on a normal home/Wi-Fi LAN — jail IPs stay private):
+    1. rc.conf:     comment out ifconfig_bridge0_member="em0"
+    2. sysctl.conf: uncomment net.inet.ip.forwarding=1
+    3. pf.conf §8 "Scenario B": uncomment the nat lines for your uplink(s)
+                    (em0 and/or wlan0), plus a `rdr` if you need inbound
+    4. doas sysctl net.inet.ip.forwarding=1   # or reboot
+       doas pfctl -f /etc/pf.conf             # pfctl -nf first to syntax-check
+    Test:  doas jexec db /usr/bin/fetch -qo- https://example.com >/dev/null && echo OK
+
+ B) BRIDGED (jails appear as normal machines on your LAN):
+    1. rc.conf: keep ifconfig_bridge0_member="em0" and autobridge_* as shipped
+    2. jail IPs must fit YOUR LAN numbering — edit the ip4.addr lines
+    3. pf.conf §8 "Scenario A": uncomment the bridge0 rules you want
+
+ DNS (the classic gotcha):
+   jail.conf copies the HOST's resolv.conf into each jail once (the
+   `test -s ... || cp` lines). If the host gets DNS from DHCP — done.
+   If the host points at 127.0.0.1 (local unbound, see PRIVACY.txt): inside
+   a shared-IP jail 127.0.0.1 maps to the JAIL's address, where nothing
+   listens -> no name resolution. Fix once per jail:
+     echo 'nameserver 10.0.100.1' > /usr/local/jails/db/etc/resolv.conf
+   ...and make the host resolver answer on the bridge (unbound:
+   interface: 10.0.100.1 / access-control 10.0.100.0/24 allow), plus the
+   pf line already parked in pf.conf §8 notes:
+     pass on $jb_if proto { tcp udp } from 10.0.100.0/24 to ($jb_if) port 53
+   Your hand-written file SURVIVES restarts (jail.conf only copies while the
+   file is missing/empty). Alternative: run a resolver inside the jail.
+   Inside a jail, 127.0.0.1 always means the jail itself — daemons bound to
+   localhost stay confined (Handbook, Jails chapter).
+
+ -----------------------------------------------------------------------------
+ 6. PACKAGES, USERS, SERVICES INSIDE A JAIL
+ -----------------------------------------------------------------------------
+ Networking (§5) must work first. Then, from inside the jail:
+     pkg                                    # bootstraps pkg on first run
+     pkg install -y nginx
+     sysrc nginx_enable=YES && service nginx start
+     pw useradd alice -m -s /bin/sh         # user + home inside the jail
+ Packages land in the jail's own /usr/local. Thin jails: see jail.conf §5a
+ for a shared read-only /usr/local if you want ONE set of packages for all.
+ Notes:
+   * a wildcard bind in a jail automatically means "the jail's own IPs"
+     (jail(8)) — a jail's sshd can never steal the host's sshd port.
+   * the reverse is the real trap: HOST services bound to * do claim jail
+     IPs. This repo runs sendmail=NONE and sshd off on the host; if you
+     enable host sshd later, pin it with ListenAddress (jail(8) explains).
+   * doas/sudo are NOT inside jails (jail.conf never copies host /etc) —
+     manage them with `jexec <j> ...` from the host, or set it up in-jail.
+
+ -----------------------------------------------------------------------------
+ 7. UPDATES
+ -----------------------------------------------------------------------------
+ KERNEL: shared — update the HOST only (freebsd-update fetch install +
+ reboot). Jails restart with it (jail_enable).
+ USERLAND, classic jail (works stopped or running):
+     doas freebsd-update -b /usr/local/jails/www fetch install
+     # or, while it runs: doas freebsd-update -j www fetch install
+ USERLAND, thin jails: update the TEMPLATE, never the jail (its base is
+ read-only mounts). Stop the thin jails first, then:
+     doas freebsd-update -b /usr/local/jails/template fetch install
+     doas service jail start db              # now running on patched files
+ PACKAGES: per jail, inside it:  pkg update && pkg upgrade
+ RELEASE UPGRADE (e.g. 14.3 -> 14.4): host first, then the same command
+ with -r <newrel> -b <path> for every jail (freebsd-update(8)); keep jail
+ userland == host release, they share the kernel.
+
+ -----------------------------------------------------------------------------
+ 8. ZFS BONUS — instant jails by clone (optional)
+ -----------------------------------------------------------------------------
+ If you did §1a on ZFS, the template is its own dataset, so:
+     doas zfs snapshot zroot/jails/template@base
+     doas zfs clone zroot/jails/template@base zroot/jails/www
+   -> a COMPLETE classic jail, instantly, copy-on-write: jail.conf's www
+      block works unchanged (no tar needed). Extra disk only for writes.
+ More snapshots = roll-back points per jail:
+     doas zfs destroy zroot/jails/www         # delete a stopped jail
+     doas zfs clone zroot/jails/template@base zroot/jails/www   # reborn
+ Thin-vs-clone: nullfs thin = shared read-only base (uniform, one update);
+ clone = per-jail copy-on-write base (independent, still ~0 MB at first).
+ Both are pure base-system recipes. Backups/rollback: zfs send/recv — see
+ ZFS-SSD.txt. NOTE: jails must be stopped before destroy/snapshot of their
+ dataset.
+
+ -----------------------------------------------------------------------------
+ 9. SECURITY NOTES
+ -----------------------------------------------------------------------------
+   * devfs ruleset 4 (devfsrules_jail) hides disks/dri/raw devices. NEVER
+     raise this for untrusted jails: a jail that can write /dev/ada0 writes
+     straight through the sandbox (jail(8) warns about exactly this).
+   * allow.raw_sockets / allow.mount / allow.set_hostname / sysv* are all
+     OFF by default — uncomment per jail in jail.conf only when needed
+     (raw sockets = ping/traceroute from inside).
+   * jail is isolation, not a kernel boundary: same kernel as the host.
+     Patch the host (LOCKDOWN.txt, SECURITY-LOGS.txt), don't run truly
+     hostile code in a jail — that's what bhyve VMs are for.
+   * pf default-deny covers everything (pf.conf); the jail scenarios in
+     pf.conf §8 stay commented until you pick a mode (§5) — nothing leaks
+     by accident.
+   * the template is mounted into every thin jail: keep it clean, never run
+     services or hand-edits in it outside of updates (§7).
+
+ -----------------------------------------------------------------------------
+ 10. ADDING MORE JAILS
+ -----------------------------------------------------------------------------
+ THIN (30 seconds): copy the `db { ... }` block in jail.conf, change name,
+ hostname and IP (next free: .30, .40 — .10/.20 are taken by the examples),
+ then:   doas jail -f /etc/jail.conf -c newservice
+ The skeleton is built automatically; there is nothing else to prepare.
+ CLASSIC: mkdir + tar (§2), plus a copied block.
+ Names: no dots. Every jail: unique ip4.addr.
+ Check the file parses and shows what you think:
+     doas jail -f /etc/jail.conf -e :
+ Prefer files over one big file? jail.conf §5d (.include jail.conf.d).
+
+ -----------------------------------------------------------------------------
+ 11. TROUBLESHOOTING CHEATSHEET (keep a console open while testing)
+ -----------------------------------------------------------------------------
+ Start with the verbose form — it prints every command and where it failed:
+     doas jail -f /etc/jail.conf -cv db
+ Jail's own output (rc messages/errors) on the host:
+     tail -f /var/log/jail_db_console.log
+
+   path ... No such file or directory
+        -> jail dir missing: §2 (classic) or you edited $jroot in jail.conf
+   exec.prepare ... failed
+        -> the first exec.prepare line failed on purpose:
+           www: base.txz was never extracted into the jail (§2)
+           db : template missing (§1). Run the command by hand to see why
+           (e.g. host has no /etc/resolv.conf -> comment that cp line).
+   mount ...: No such file or directory
+        -> a thin mountpoint is missing (exec.prepare did not run/be edited)
+   umount ... not a nullfs mount / not a mount point
+        -> someone cd'd into the jail dir on the host, or mounts are stale:
+           mount | grep /usr/local/jails ; doas umount <path>   (deepest first)
+   jail created, then jls shows nothing / "jail removed" at once
+        -> the jail's /etc/rc started NO daemon (empty rootfs or rc error):
+           check /var/log/jail_<name>_console.log
+   jail -c: unknown variable "$foo"
+        -> only ${path}, $name and the two top-of-file variables exist;
+           every $ must be one of those or defined at the top of jail.conf
+   service jail start: "cannot start jail" + message
+        -> same errors as above; service jail needs jail_enable=YES
+   no outbound from jails -> §5 (NAT/forwarding/pf), DNS -> §5
+   pf questions:        doas tcpdump -n -e -ttt -i pflog0   (pf.conf §10)
+   sockets/ports:       doas jexec db sockstat -4 -l ; on host: sockstat -4 -l
+   after any doubt:     doas jail -f /etc/jail.conf -r '*'    (stop them ALL)
+=============================================================================

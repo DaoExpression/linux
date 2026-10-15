@@ -1,0 +1,66 @@
+#	/etc/ssh/sshd_config — lab guest baseline
+#
+#	Deployed to every guest, then overridden by anything in the per-guest tree
+#	(vms/bastion/etc/ssh/sshd_config is deliberately different: it is the only
+#	guest with a path in from outside).
+#
+#	Check with:  sshd -t
+#	Apply with:  rcctl restart sshd
+
+Port 22
+AddressFamily any
+
+# @ADDRESS@ is substituted by scripts/deploy.sh with the guest's own address
+# (the same token as pf.conf uses), so sshd binds one lab address rather than
+# "*" — which on a DMZ guest would also mean the internet-facing interface.
+ListenAddress @ADDRESS@
+
+HostKey /etc/ssh/ssh_host_ed25519_key
+HostKey /etc/ssh/ssh_host_rsa_key
+
+# --- authentication -----------------------------------------------------------
+# Key-only.  Guests are managed from the MGMT network and from the bastion;
+# nothing else logs in.
+PermitRootLogin prohibit-password
+PubkeyAuthentication yes
+AuthorizedKeysFile .ssh/authorized_keys
+AuthenticationMethods publickey
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitEmptyPasswords no
+UseDNS no
+LoginGraceTime 20
+MaxAuthTries 3
+MaxSessions 4
+MaxStartups 3:50:10
+
+# Only the management networks and the bastion may connect.  The bastion is
+# listed by address because it is the only host that should reach everything.
+AllowUsers admin@10.10.10.0/24
+AllowUsers admin@10.10.50.0/24
+AllowUsers admin@10.10.60.0/24
+AllowGroups wheel operators
+
+# --- session ------------------------------------------------------------------
+StrictModes yes
+PrintMotd yes
+PrintLastLog yes
+PermitUserEnvironment no
+ClientAliveInterval 120
+ClientAliveCountMax 2
+
+# --- forwarding ---------------------------------------------------------------
+AllowAgentForwarding no
+AllowTcpForwarding no
+PermitTunnel no
+GatewayPorts no
+X11Forwarding no
+X11UseLocalhost yes
+PermitListen none
+PermitOpen none
+
+# --- logging ------------------------------------------------------------------
+LogLevel VERBOSE
+SyslogFacility AUTH
+
+Subsystem	sftp	/usr/libexec/sftp-server

@@ -1,0 +1,26 @@
+#	/etc/unwind.blocklist — domains answered with REFUSED by unwind(8)
+#
+#	Referenced from /etc/unwind.conf:
+#	    block list "/etc/unwind.blocklist" log
+#
+#	Syntax: one domain per line; a leading dot matches the zone and all of
+#	its subdomains.  Blank lines and #-comments are ignored.
+#
+#	This is a *local* list for the gateway's own lookups.  Client-side
+#	blocking belongs on the dns VM (unbound's local-zone/local-data), because
+#	clients never talk to this instance.
+#
+#	The entries below are examples of the shape a lab blocklist takes, kept
+#	deliberately small: a large third-party blocklist belongs in a cron job
+#	that downloads it, not in a file maintained by hand.
+
+# Vendor telemetry that phones home from lab hardware.
+.telemetry.vendor.example
+.metrics.vendor.example
+
+# Public NTP, when the lab must use its own ntpd(8) for consistent logs.
+pool.ntp.org
+.time.nist.gov
+
+# Ad networks — kept minimal here; see the note above.
+.ads.example

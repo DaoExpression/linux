@@ -1,0 +1,45 @@
+#!/bin/sh
+# /etc/kernel/postinst.d/zz-sign-uki
+# Runs after every kernel package install/removal. Without this, the first kernel upgrade after
+# enabling Secure Boot own-keys leaves you with an unsigned UKI and an unbootable machine
+# (until you sign it from a rescue environment).
+#
+# Exit non-zero on failure: a silent failure here means "next reboot does not work".
+set -eu
+
+VERSION="${1:-}"
+if [ -z "${VERSION}" ]; then
+    echo "zz-sign-uki: no kernel version supplied" >&2
+    exit 1
+fi
+
+if [ ! -x /usr/bin/sbctl ]; then
+    echo "zz-sign-uki: sbctl not installed; skipping" >&2
+    exit 0
+fi
+
+# Sign every UKI and bootloader binary sbctl knows about, updating (not replacing) its db.
+if ! sbctl sign-all >/dev/null 2>&1; then
+    # sign-all only works if files were registered with `sbctl sign -s` earlier.
+    # Fall back to signing the UKI for this kernel explicitly.
+    MACHINE_ID="$(cat /etc/machine-id 2>/dev/null || true)"
+    for f in /boot/efi/EFI/Linux/"${MACHINE_ID}"-"${VERSION}".efi \
+             /boot/efi/EFI/Linux/*-"${VERSION}".efi; do
+        [ -e "$f" ] || continue
+        sbctl sign -s "$f" || { echo "zz-sign-uki: failed to sign $f" >&2; exit 1; }
+    done
+fi
+
+# Verify rather than assume.
+if command -v sbctl >/dev/null 2>&1; then
+    unver="$(sbctl verify 2>/dev/null | grep -ci 'not signed' || true)"
+    if [ "${unver}" -gt 0 ]; then
+        echo "zz-sign-uki: WARNING - $unver unsigned EFI file(s) remain (see 'sbctl verify')" >&2
+        # Deliberately non-fatal: an unrelated unsigned EFI file should not break apt.
+    fi
+fi
+
+# If /boot is mounted read-only (Tier 3), the caller (scripts/install-hardening.sh
+# --unsafe-remount-boot) is responsible for remounting it read-write around apt runs.
+echo "zz-sign-uki: signed UKI for kernel ${VERSION}"
+exit 0

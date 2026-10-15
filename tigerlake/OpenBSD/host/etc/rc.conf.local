@@ -1,0 +1,67 @@
+#	/etc/rc.conf.local — gateway *gw.lab.example.org*
+#
+#	Base daemons are enabled by assigning an empty flag string and disabled
+#	with "NO".  Anything not mentioned keeps its /etc/rc.conf default, so the
+#	"disable" list below is what makes this box a purpose-built appliance
+#	rather than a general-purpose server.
+
+# ------------------------------------------------------------------ network
+pf=YES
+pflogd_flags="-s 160 -f /var/log/pflog"	# snaplen 160B, log to pflog(4)
+dhcpleased_flags=""			# WAN DHCP client (hostname.igc0)
+slaacd_flags=""				# WAN IPv6 autoconf + RDNSS
+resolvd_flags=""			# merges DHCP/SLAAC learned resolvers
+unwind_flags=""				# recursive resolver for the lab
+ntpd_flags=""				# NTP server for the lab
+# -u is REQUIRED to receive logs from the guests: the rc.d script otherwise
+# starts syslogd with -s, which refuses anything that did not arrive over a
+# local socket.
+syslogd_flags="-u"			# central log receiver (see syslog.conf)
+snmpd_flags=""				# read-only metrics for the mon VM
+
+# ------------------------------------------------------------------ routing services
+dhcpd_flags=""				# USERS + GUEST (see dhcpd.conf)
+radvd_flags=""				# IPv6 RA on vlan20/vlan30
+nsd_flags=""				# authoritative secondary (see nsd.conf)
+iked_flags=""				# IKEv2 road warriors
+ftp-proxy_flags=""			# divert-to mode, rule in pf.conf
+
+# ------------------------------------------------------------------ published services
+relayd_flags=""				# TLS termination in front of the DMZ
+httpd_flags=""				# ACME responder + status page
+smtpd_flags=""				# outbound relay for mail.lab.example.org
+
+# ------------------------------------------------------------------ virtualisation
+vmd_flags=""				# vmm(4)/vmd(8) host (see vm.conf)
+
+# ------------------------------------------------------------------ not used here
+sndiod_flags=NO			# no audio
+sensorsd_flags=NO			# sensor logging done on mon
+hotplugd_flags=NO			# no removable media on a router
+identd_flags=NO			# leaks info, nothing needs it
+inetd_flags=""				# only for ftpd (see inetd.conf)
+ftpd_flags=NO  				# standalone ftpd not used; run it from inetd
+spamd_flags=NO				# no smtp greylisting here (mail VM does)
+pflow_flags=NO				# no NetFlow collector yet
+tftpd_flags=NO
+lpd_flags=NO
+ldapd_flags=NO
+kdc_flags=NO
+isakmpd_flags=NO			# iked(8) replaces it
+bgpd_flags=NO
+ospfd_flags=NO
+ospf6d_flags=NO
+ripd_flags=NO
+ripngd_flags=NO
+dvmrpd_flags=NO
+sasyncd_flags=NO
+slowcgi_flags=NO			# no personal httpd CGI here
+xdm_flags=NO
+yppasswdd_flags=NO
+ypserv_flags=NO
+ypprop_flags=NO
+ypbind_flags=NO
+
+# 802.11n/ac access point is *not* managed from this host: the AP is a separate
+# device on the trunk, or hostapd(8) on a dedicated WLAN box.
+hostapd_flags=NO

@@ -1,0 +1,42 @@
+#	/etc/rc.conf.local — dns
+#
+#	This guest is the lab's resolver.  Two daemons matter here:
+#
+#	  unbound   from packages: recursion for the client networks, a stub zone
+#	            for lab.example.org pointing at the gateway's nsd(8), DNSSEC
+#	            validation, and a cache.  It binds the guest's own addresses,
+#	            never localhost, so it cannot collide with unwind(8) below.
+#	  unwind    the base resolver, left enabled for lookups made *by this
+#	            guest's own processes* (it binds 127.0.0.1 and ::1 only).
+#	            /etc/resolv.conf points at it.
+#
+#	nsd(8) is NOT run here: the gateway holds the primary copy of the zone and
+#	transfers it to whoever needs it.  Keeping one writable copy is what stops
+#	the zone file and reality from drifting apart.
+
+pf=YES
+sshd_flags=""
+syslogd_flags="-u"
+ntpd_flags=""
+unwind_flags=""
+unbound_flags=""		# /etc/unbound.conf, package from ports
+
+sndiod_flags=NO
+sensorsd_flags=NO
+hotplugd_flags=NO
+identd_flags=NO
+inetd_flags=NO
+lpd_flags=NO
+spamd_flags=NO
+xdm_flags=NO
+httpd_flags=NO
+smtpd_flags=NO
+snmpd_flags=""			# polled by mon like every other guest
+dhcpd_flags=NO
+radvd_flags=NO
+relayd_flags=NO
+iked_flags=NO
+vmd_flags=NO
+ftp-proxy_flags=NO
+nsd_flags=NO
+pflow_flags=NO

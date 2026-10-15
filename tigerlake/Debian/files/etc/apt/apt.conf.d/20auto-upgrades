@@ -1,0 +1,8 @@
+// /etc/apt/apt.conf.d/20auto-upgrades
+// Enables the periodic apt timers. The security policy itself lives in 50unattended-upgrades.
+APT::Periodic::Enable "1";
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Download-Upgradeable-Packages "1";
+APT::Periodic::Unattended-Upgrade "1";
+APT::Periodic::AutocleanInterval "7";
+APT::Periodic::Verbose "1";

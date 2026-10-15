@@ -1,0 +1,50 @@
+#	/etc/rc.conf.local — storage
+#
+#	Base system daemons:
+#	  nfsd    the NFS server (needs /etc/exports and rpcbind, which is started
+#	          on demand by rc(8) — there is no rpcbind_flags knob for it)
+#	  mountd  answers mount requests; it uses a port from the reserved range,
+#	          so pf rules for NFS must allow it explicitly (see pf.conf)
+#
+#	Packages:
+#	    pkg_add samba
+#	    pkg_add tgt      # only if you also want the iSCSI target; see docs/
+#
+#	Samba's rc.d script on OpenBSD is called "samba" and runs smbd+nmbd.
+#	If you want an Apple-style time capsule instead, use netatalk and its
+#	own rc.d script — the pf rules below are the same shape.
+
+pf=YES
+sshd_flags=""
+syslogd_flags="-u"
+ntpd_flags=""
+nfsd_flags="-t -u"		# -t TCP, -u UDP: both, because clients pick
+mountd_flags=""			# reads /etc/exports; SIGHUP to reload
+rpcbind_flags=""
+samba_flags=""			# package: smbd + nmbd
+
+sndiod_flags=NO
+sensorsd_flags=NO
+hotplugd_flags=NO
+identd_flags=NO
+inetd_flags=NO			# ftpd is not exported from here
+lpd_flags=NO
+spamd_flags=NO
+xdm_flags=NO
+httpd_flags=NO
+smtpd_flags=NO
+unwind_flags=NO
+dhcpd_flags=NO
+radvd_flags=NO
+nsd_flags=NO
+relayd_flags=NO
+iked_flags=NO
+vmd_flags=NO
+ftp-proxy_flags=NO
+snmpd_flags=""
+pflow_flags=NO
+
+# The file service is the one thing on this guest that must survive a restart:
+# if nfsd comes back before the disk, clients get ESTALE and cache it.  rc(8)
+# starts daemons after the filesystems are mounted, so this is safe by
+# default — the note exists so that nobody "optimises" it away later.

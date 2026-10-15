@@ -1,0 +1,47 @@
+# /etc/systemd/system/aide-check.service
+# Daily file-integrity check. See docs/04 §8 and docs/10 §1.
+# Baseline rules: take the AIDE baseline LAST, after every config change is final.
+
+[Unit]
+Description=AIDE file integrity check
+Documentation=man:aide(1) file:///etc/aide/aide.conf
+After=local-fs.target
+# Do not fight with the weekly apt run or with each other.
+Conflicts=aide-check.timer
+
+[Service]
+Type=oneshot
+Nice=19
+IOSchedulingClass=idle
+# AIDE needs to read everything and write only its database + report.
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+NoNewPrivileges=yes
+CapabilityBoundingSet=CAP_DAC_READ_SEARCH CAP_CHOWN CAP_FOWNER
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources @obsolete @mount @debug @cpu-emulation @swap @keyring
+ReadWritePaths=/var/lib/aide /var/log/paranoid
+UMask=0027
+
+ExecStartPre=/bin/mkdir -p /var/log/paranoid
+ExecStart=/usr/bin/aide --check --config /etc/aide/aide.conf
+# --check exits non-zero when it finds changes. That is a *finding*, not a service failure we want
+# to hide behind SuccessExitStatus: keep the non-zero status so `systemctl --failed` shows it, and
+# make sure someone reads /var/log/paranoid/aide.log (or the shipped journal record).
+StandardOutput=append:/var/log/paranoid/aide.log
+StandardError=append:/var/log/paranoid/aide.log
+
+[Install]
+WantedBy=multi-user.target

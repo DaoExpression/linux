@@ -1,0 +1,49 @@
+#	/etc/crontab — db guest
+#
+#	Read by cron(8) directly, so it carries a "user" column.  This file
+#	REPLACES the one the installer wrote: diff it against the stock file on
+#	your release before deploying.
+#
+#	minute hour mday month wday user command
+
+# ------------------------------------------------------------------ dumps
+# pg_dump per database, gzipped, written to the storage guest over NFS so the
+# copy is not on the disk it protects.  --clean makes the dump a script that
+# can be replayed over an existing database.
+#
+# db-dump is not shipped in this repository (it depends on which databases
+# exist and where the storage mount point is — see the notes at the bottom), so
+# the line is left COMMENTED.  An enabled cron line pointing at a missing
+# script sends a failure mail every night until somebody writes it, which is
+# exactly the noise that trains people to ignore cron mail.
+#15	2	*	*	*	_postgresql	/usr/local/sbin/db-dump
+
+# ------------------------------------------------------------------ health
+# A nightly, cheap "is this database healthy" check that emails when it is not:
+# an unplayable WAL or a wrapped transaction ID is not something to discover
+# during an incident.
+0	5	*	*	*	_postgresql	/usr/local/bin/psql -qAt \
+	-c 'select current_database(), pg_database_size(current_database())' \
+	> /dev/null || /usr/bin/logger -t cron -p daemon.err "postgresql check failed"
+
+# ------------------------------------------------------------------ maintenance
+# VACUUM (not FULL) nightly on the application database: plain VACUUM keeps the
+# visibility map current and does not take an exclusive lock.
+30	3	*	*	*	_postgresql	/usr/local/bin/psql -d appdb -q \
+	-c 'VACUUM (ANALYZE)'
+
+# A weekly bloat report.  Without pgstattuple installed this still shows the
+# table sizes, which is enough to notice a table growing without bound.
+0	4	*	*	1	_postgresql	/usr/local/bin/psql -d appdb -c \
+	"select relname, pg_size_pretty(pg_total_relation_size(oid)) from pg_class \
+	 where relkind = 'r' order by pg_total_relation_size(oid) desc limit 20" \
+	> /var/log/pg-size-weekly.log
+
+# ------------------------------------------------------------------ notes
+# * The dump script (/usr/local/sbin/db-dump) is deliberately not in this
+#   repository: its content depends on which databases exist, and it needs to
+#   know the storage mount point.  Write it as a three-line loop over
+#   "psql -lqt" and keep it on the guest.
+# * Backups that are never restored are not backups.  Once a month, restore the
+#   newest dump into a scratch database and drop it again; that is the only
+#   test that counts.

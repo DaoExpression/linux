@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+# /usr/local/sbin/paranoid-cert-check
+#
+# Warns when a TLS certificate is close to expiry or a private key has the wrong mode/owner.
+# Called by paranoid-cert-check.service. Kept out of the unit because a unit file cannot contain
+# printf format specifiers ('%s' is a systemd specifier and makes the unit refuse to start).
+#
+# Environment overrides exist for testing:
+#   PARANOID_CERTDIR  (default /etc/letsencrypt/live)
+#   PARANOID_LOGDIR   (default /var/log/paranoid)
+#   PARANOID_MIN_DAYS (default 21)
+#
+# Exit codes: 0 healthy, 1 something needs attention, 2 usage error.
+
+set -uo pipefail
+
+CERTDIR="${PARANOID_CERTDIR:-/etc/letsencrypt/live}"
+LOGDIR="${PARANOID_LOGDIR:-/var/log/paranoid}"
+MIN_DAYS="${PARANOID_MIN_DAYS:-21}"
+
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+    sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'
+    exit 0
+fi
+
+command -v openssl >/dev/null 2>&1 || { echo "paranoid-cert-check: openssl not found" >&2; exit 2; }
+
+mkdir -p "$LOGDIR" 2>/dev/null || true
+LOG="${LOGDIR}/certs.log"
+out() { printf '%s\n' "$*"; printf '%s\n' "$*" >> "$LOG" 2>/dev/null || true; }
+
+rc=0
+found=0
+now_epoch="$(date +%s)"
+
+for cert in "$CERTDIR"/*/fullchain.pem; do
+    [ -e "$cert" ] || continue
+    found=$((found + 1))
+    dir="${cert%/fullchain.pem}"
+
+    end_raw="$(openssl x509 -in "$cert" -noout -enddate 2>/dev/null | cut -d= -f2)"
+    if [ -z "$end_raw" ]; then
+        out "FAIL ${dir}: unreadable or invalid certificate"
+        rc=1
+        continue
+    fi
+    end_epoch="$(date -d "$end_raw" +%s 2>/dev/null || echo 0)"
+    subject="$(openssl x509 -in "$cert" -noout -subject 2>/dev/null | sed 's/^subject=//')"
+    issuer="$(openssl x509 -in "$cert" -noout -issuer 2>/dev/null | sed 's/^issuer=//')"
+
+    if [ "$end_epoch" -eq 0 ]; then
+        out "FAIL ${dir}: cannot parse expiry '${end_raw}'"
+        rc=1
+        continue
+    fi
+    days=$(( (end_epoch - now_epoch) / 86400 ))
+    if [ "$days" -lt 0 ]; then
+        out "FAIL ${dir}: EXPIRED ${days#-} days ago ($end_raw) subject='${subject}'"
+        rc=1
+    elif [ "$days" -lt "$MIN_DAYS" ]; then
+        out "WARN ${dir}: expires in ${days} days ($end_raw) - renewal is failing. subject='${subject}'"
+        rc=1
+    else
+        out "OK   ${dir}: ${days} days remaining ($end_raw) issuer='${issuer}'"
+    fi
+
+    key="${dir}/privkey.pem"
+    if [ -e "$key" ]; then
+        mode="$(stat -c %a "$key" 2>/dev/null || echo unknown)"
+        owner="$(stat -c %U:%G "$key" 2>/dev/null || echo unknown)"
+        if [ "$mode" = "600" ] && [ "$owner" = "root:root" ]; then
+            out "OK   ${key}: mode ${mode} owner ${owner}"
+        else
+            out "FAIL ${key}: mode ${mode} owner ${owner} (want 600 root:root)"
+            rc=1
+        fi
+    else
+        out "WARN ${dir}: no privkey.pem next to the full chain"
+    fi
+done
+
+if [ "$found" -eq 0 ]; then
+    # Nothing to check yet (before the first certificate is issued). Not a failure: the service is
+    # installed by the hardening script, certificates come later (docs/06 §4).
+    out "OK   no certificates found under ${CERTDIR} yet - nothing to check"
+fi
+
+out "certificate check complete rc=${rc}"
+exit "$rc"

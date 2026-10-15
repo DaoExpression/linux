@@ -1,0 +1,114 @@
+#!/bin/ksh
+#
+#	vm-disk-report - what the guests are costing on disk
+#
+#	Installed to /usr/local/sbin/vm-disk-report and run from /etc/crontab on
+#	the gateway:
+#	    vm-disk-report           # report, always exits 0
+#	    vm-disk-report check     # report, exit 1 if anything is over threshold
+#
+#	Why this exists: qcow2 files grow and never shrink, so the failure mode is
+#	not a guest dying, it is /var/vmm filling up at 03:00 and every guest
+#	losing the ability to write at once.  A file that reports its own growth is
+#	the cheapest early warning there is.
+
+set -u
+
+MODE=${1:-report}
+VMMDIR=${VMMDIR:-/var/vmm}
+WARN_PCT=${WARN_PCT:-80}		# filesystem usage warning threshold
+CRIT_PCT=${CRIT_PCT:-90}		# hard threshold for "check"
+GROWTH_WARN=${GROWTH_WARN:-20}		# percent growth in a week worth noting
+STATEDIR=/var/db/vm-disk-report
+
+log() { echo "$*"; }
+
+[ "$(id -u)" -eq 0 ] || { echo "vm-disk-report: must be run as root" >&2; exit 1; }
+[ -d "$VMMDIR" ] || { echo "vm-disk-report: $VMMDIR does not exist" >&2; exit 1; }
+
+mkdir -p "$STATEDIR"
+
+# ------------------------------------------------------------------ filesystem
+# awk over df(1) output: the veb/tap interfaces and the guest processes do not
+# matter here, only the volume the images live on.
+df_out=$(df -h "$VMMDIR" | awk 'NR == 2 { print $1, $2, $3, $4, $5 }')
+set -- $df_out
+fs=$1; size=$2; used=$3; avail=$4; pct=${5%\%}
+
+log "== $VMMDIR =="
+log "filesystem   $fs  ($size total, $used used, $avail free, ${pct}% used)"
+
+status=0
+if [ "$pct" -ge "$CRIT_PCT" ]; then
+	log "CRITICAL: ${pct}% used (>= $CRIT_PCT%)"
+	status=1
+elif [ "$pct" -ge "$WARN_PCT" ]; then
+	log "WARNING: ${pct}% used (>= $WARN_PCT%)"
+fi
+
+# ------------------------------------------------------------------ images
+log ""
+log "== images =="
+printf '%-24s %10s %10s %10s %s\n' IMAGE APPARENT ON-DISK ALLOCATED GROWTH
+
+for img in "$VMMDIR"/*.qcow2 "$VMMDIR"/*.raw; do
+	[ -f "$img" ] || continue
+	name=$(basename "$img")
+
+	# "ls -l" is the file size (what qcow2 has allocated), "du" is what the
+	# filesystem actually gave it.  They differ for sparse images, and the
+	# difference is the interesting number when a disk "should not" be full.
+	apparent=$(ls -l "$img" | awk '{ print $5 }')
+	on_disk=$(du -k "$img" | awk '{ print $1 * 1024 }')
+
+	# Compare with the same day last week, if we have a record of it.
+	prev_file="$STATEDIR/$name.week"
+	growth="-"
+	if [ -f "$prev_file" ]; then
+		prev=$(cat "$prev_file")
+		if [ "$prev" -gt 0 ] 2>/dev/null; then
+			growth=$(awk -v a="$on_disk" -v b="$prev" \
+				'BEGIN { printf "%+.1f%%", (a - b) * 100 / b }')
+			awk -v g="${growth%\%}" -v t="$GROWTH_WARN" \
+				'BEGIN { exit !(g > t) }' &&
+				log "  ^ $name grew ${growth} in a week"
+		fi
+	fi
+
+	printf '%-24s %10s %10s %10s %s\n' "$name" "$apparent" "$on_disk" "-" "$growth"
+done
+
+# ------------------------------------------------------------------ rotation
+# The "week" file is really "the value from 7 days ago": keep a short history
+# and promote the oldest entry at most once per day.
+today=$(date +%Y-%m-%d)
+if [ ! -f "$STATEDIR/last-run" ] || [ "$(cat "$STATEDIR/last-run")" != "$today" ]; then
+	for img in "$VMMDIR"/*.qcow2; do
+		[ -f "$img" ] || continue
+		name=$(basename "$img")
+		# Seed the week-old value from today's, one day at a time; after a
+		# week of runs this becomes a genuine seven-day comparison.
+		du -k "$img" | awk '{ print $1 * 1024 }' > "$STATEDIR/$name.today"
+		if [ -f "$STATEDIR/$name.week" ]; then
+			mv "$STATEDIR/$name.week" "$STATEDIR/$name.older"
+			mv "$STATEDIR/$name.today" "$STATEDIR/$name.week"
+		else
+			: # first run: leave week unset, growth stays "-"
+		fi
+	done
+	echo "$today" > "$STATEDIR/last-run"
+fi
+
+log ""
+log "== running guests =="
+vmctl status 2>/dev/null || log "(vmctl not available)"
+
+# ------------------------------------------------------------------ verdict
+if [ "$MODE" = check ] && [ "$status" -ne 0 ]; then
+	exit 1
+fi
+
+log ""
+log "note: qcow2 files grow and never shrink.  To reclaim space in a stopped"
+log "      guest:  vmctl create -i /var/vmm/x.qcow2 /var/vmm/x.new.qcow2"
+exit 0

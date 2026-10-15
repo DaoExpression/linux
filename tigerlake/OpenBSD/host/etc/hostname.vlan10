@@ -1,0 +1,6 @@
+#	MGMT — 10.10.10.0/24.  The only zone sshd(8) listens on.
+vlan 10 vlandev igc1
+description "mgmt 10.10.10.0/24"
+inet 10.10.10.1 255.255.255.0 10.10.10.255
+inet6 fd00:10:10:10::1 64
+up

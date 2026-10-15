@@ -1,0 +1,47 @@
+# /etc/systemd/nspawn/app01.nspawn
+# Isolation policy for one small service in its own container (docs/08 §2).
+# This is the file that makes the difference between "a chroot with extra steps" and real isolation.
+
+[Exec]
+Boot=yes
+# Only the capabilities the service actually needs. Everything else is dropped.
+Capability=CAP_NET_BIND_SERVICE CAP_SETUID CAP_SETGID CAP_CHOWN CAP_DAC_OVERRIDE CAP_KILL
+# Map the container's root to an unprivileged host uid. This is the key isolation property.
+PrivateUsers=pick
+NotifyReady=yes
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources @obsolete @mount @debug @cpu-raw-io
+RestrictNamespaces=~user
+# No host time/keyring/hostname influence.
+NoNewPrivileges=yes
+
+[Files]
+# The container cannot see the host filesystem at all...
+Private=yes
+# ...and its own root filesystem is read-only. Writable state lives in Volatile= below.
+ReadOnly=yes
+Volatile=state
+# Bind ONLY the specific paths it needs, read-only where possible.
+BindReadOnly=/etc/ssl/certs:/etc/ssl/certs
+BindReadOnly=/etc/localtime:/etc/localtime
+# Example of giving a container its data directory (create it owned by the mapped uid first):
+#Bind=/srv/app01-data:/srv/data
+
+[Network]
+# Own network namespace. No address, no ports, no route out - until you deliberately add one.
+Private=yes
+# Zone=trusted
+# To publish a port (prefer a high port + an nftables redirect over exposing it directly):
+#Port=tcp:8443:443
+
+[Security]
+NoNewPrivileges=yes
+# Keep the host's AppArmor/LSM policy in effect for the container.
+# (systemd-nspawn applies a default policy; add explicit profile names here if you write them.)
+
+# REMINDERS (docs/08 §2):
+#  * The container has its OWN update cycle. A container nobody patches is a vulnerable service.
+#    Weekly:  sudo systemd-nspawn -D /var/lib/machines/app01 -- bash -c 'apt-get update && apt-get -y upgrade'
+#  * Never add 'Port=' for a management interface. Admin access goes over the WireGuard plane.
+#  * PrivateUsers=pick means the container's root is NOT host root. Verify from inside with
+#    'id' (uid 0 inside) and outside with 'ps -o user= -p <pid>' (an unprivileged uid).

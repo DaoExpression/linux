@@ -1,0 +1,48 @@
+#	/etc/mail/aliases — gateway
+#
+#	Referenced from /etc/smtpd.conf as "table aliases file:/etc/mail/aliases"
+#	and used by local delivery.  After editing, nothing needs rebuilding on
+#	OpenBSD (smtpd reads it directly), but check it:
+#	    smtpd -n
+#
+#	Everything sent to a local account is forwarded to the mail VM, which
+#	holds the real mailbox.  Never point these at a local mbox: nobody logs
+#	into the gateway to read mail.
+
+# --- default routing ----------------------------------------------------------
+# Replace with the address a human actually reads.
+root:		admin@lab.example.org
+postmaster:	root
+hostmaster:	root
+webmaster:	root
+abuse:		root
+dmarc:		root
+MAILER-DAEMON:	postmaster
+
+# --- service accounts ---------------------------------------------------------
+# Every daemon account the lab runs.  They exist so that bounces from a
+# specific service can be attributed instead of landing in root's mailbox.
+daemon:		root
+operator:	root
+www:		root
+_nsd:		root
+_unwind:	root
+_iked:		root
+_relayd:	root
+_dhcpleased:	root
+_dhcp:		root
+_slaacd:	root
+_smtpd:		root
+_smtpq:		root
+_vmd:		root
+monitor:	root
+backup:		root
+
+# --- log/security mail --------------------------------------------------------
+# Anything security-relevant should reach a person quickly.
+security:	root
+
+# ------------------------------------------------------------------ notes
+# * Add real people here as they join the lab:  alice: alice@lab.example.org
+# * "monitor" and "backup" are service accounts with /sbin/nologin shells; they
+#   are listed above only so that cron output from their jobs is not lost.

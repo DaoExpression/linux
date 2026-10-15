@@ -1,0 +1,161 @@
+=============================================================================
+ FOREIGN FILESYSTEMS & DISK IMAGES — i7-11390H FreeBSD laptop
+=============================================================================
+ Complements: CAPABILITIES.txt (ZFS/geli), SOFTWARE.txt, README.md
+ Package names verified against FreshPorts (Oct 2026).
+
+ CORE INSTALL (one line):
+   doas pkg install -y fusefs-ntfs fusefs-ext2 fusefs-ext4fuse \
+       fusefs-exfat exfat-utils dosfstools mtools qemu-img cdrtools
+
+ -----------------------------------------------------------------------------
+ 1. WHAT THE BASE SYSTEM READS NATIVELY (no packages needed)
+ -----------------------------------------------------------------------------
+   UFS        FreeBSD's classic FS; what bsdinstall uses if you skip ZFS.
+              doas mount /dev/ada0p1 /mnt
+   FAT12/16   msdosfs, in the base system:
+              doas mount -t msdosfs /dev/da0s1 /mnt
+              Useful opts: -o longnames  |  mount_msdosfs -l /dev/da0s1 /mnt
+   ISO9660    doas mount_cd9660 /dev/cd0 /mnt
+              (with Joliet/UTF-8 names: mount_cd9660 -C UTF-8 /dev/cd0 /mnt)
+   UDF        doas mount_udf /dev/cd0 /mnt        (DVDs)
+   NTFS       only with ntfs-3g (see §2) — base has no rw ntfs.
+   exFAT      only with fusefs-exfat (see §3).
+   ext4       only with fusefs-ext4fuse read-only (see §3).
+
+ -----------------------------------------------------------------------------
+ 2. NTFS (Windows disks)
+ -----------------------------------------------------------------------------
+   doas pkg install -y fusefs-ntfs
+   doas kldload fusefs            # or: doas sysrc kld_list+="fusefs"
+   doas ntfs-3g /dev/da0s1 /mnt/ntfs
+   Read-only peek (safer for foreign disks):
+     doas ntfs-3g -o ro /dev/da0s1 /mnt/ntfs
+   fstab line (mnt is the mountpoint you created):
+     /dev/da0s1 /mnt/ntfs ntfs-3g noauto,rw 0 0
+   TIPS:
+     * Windows "Fast Startup" leaves NTFS dirty — ntfs-3g refuses rw.
+       Fix in Windows (disable Fast Startup) or mount ro / ntfsfix it:
+         doas ntfsfix /dev/da0s1
+     * Images of disks: see §5d — mount the image, not the disk, when you
+       want forensically-safe reads.
+
+ -----------------------------------------------------------------------------
+ 3. exFAT, ext2/3/4, and other FUSE filesystems
+ -----------------------------------------------------------------------------
+ exFAT (big USB sticks, cameras, car stereos):
+   doas pkg install -y fusefs-exfat exfat-utils
+   doas mount.exfat /dev/da0 /mnt/exfat
+   Format one:  doas mkexfatfs /dev/da0
+   TIP: FAT32 is capped at 4 GB/file; anything bigger → exFAT.
+
+ ext4 (Linux disks):
+   Read-only, extents+crypto aware (perfect for data rescue):
+     doas pkg install -y fusefs-ext4fuse
+     doas ext4fuse /dev/ada1p2 /mnt/ext4 -o ro
+   Read-WRITE ext4 doesn't exist as a stable FreeBSD driver. Practical
+   route: run Linux in a bhyve VM with the disk passed through as
+   virtio-blk, work inside it, share results via NFS or a secondary FAT
+   image (§7 has the recipe pointers).
+
+ xfs / btrfs / zol-zfs: no stable FreeBSD readers — use a bhyve Linux
+   VM, or for Linux ZFS pools try: zpool import -o readonly=on
+   (it tells you which unsupported features block the import).
+
+ -----------------------------------------------------------------------------
+ 4. ALWAYS START HERE: identify the disk/partition without mounting
+ -----------------------------------------------------------------------------
+   doas gpart show              # every disk's partition map
+   doas fstyp /dev/da0s1        # which FS is this partition (base system)
+   doas file -s /dev/da0s1      # same, more verbose
+   doas glabel status           # human labels
+   New disk full pipeline:
+     doas gpart create -s gpt da1
+     doas gpart add -t linux-data -l bigdata da1     # gpart show -t tables
+     doas newfs  /dev/da1p1                          # UFS
+     # or FAT: doas newfs_msdos -F 32 /dev/da1p1
+
+ -----------------------------------------------------------------------------
+ 5. DISK IMAGE FILES (.img / .iso): create, mount, convert, burn
+ -----------------------------------------------------------------------------
+ The base system alone covers almost everything (dd, mdconfig, makefs,
+ gpart, truncate). Extras = one pkg each, all listed at the top.
+
+ 5a. Make an image file and mount it (BASE):
+       doas dd if=/dev/zero of=/tmp/disk.img bs=1M count=512
+       doas mdconfig -a -t vnode -f /tmp/disk.img          # -> md0
+       doas gpart create -s gpt md0
+       doas gpart add -t freebsd-ufs md0
+       doas newfs /dev/md0p1
+       doas mount /dev/md0p1 /mnt
+       ... work ... then detach (image keeps the data):
+         doas umount /mnt ; doas mdconfig -d -u md0
+
+ 5b. Make an ISO from a directory (BASE): makefs
+       doas makefs -t cd9660 -o isolevel=3 -o label=MYDISK mycd.iso ./dir/
+       Traditional alternative: pkg install cdrtools && mkisofs -J -R ...
+
+ 5c. Bootable USB stick (BASE): plain dd
+       doas dd if=FreeBSD-14.3-RELEASE-amd64-memstick.img of=/dev/da0 \
+            bs=1M conv=sync status=progress
+     TIP: dd to the DISK (da0), never to a partition (da0s1).
+     Verify afterwards: doas cmp /dev/da0 theimage.img
+
+ 5d. Loop-mount ANY existing image file (BASE):
+       doas mdconfig -a -t vnode -f someimage.img     # -> /dev/mdX
+       doas fstyp /dev/mdX                            # what's inside?
+       doas mount -t msdosfs /dev/mdXs1 /mnt          # match its type
+       # NTFS image? doas ntfs-3g /dev/mdXs1 /mnt     # [-> §2]
+       # ext4 image? doas ext4fuse /dev/mdXp2 /mnt -o ro
+       doas mdconfig -d -u mdX                        # release when done
+
+ 5e. Sparse image files for VMs/containers (BASE):
+       doas truncate -s 20G sparse.img                # instant, 0 bytes used
+       # then mdconfig -f like 5a, or hand it to a VM.
+
+ 5f. Convert VM disk formats: qcow2/vdi/vhd <-> raw — pkg qemu-img
+       qemu-img info mydisk.qcow2
+       qemu-img convert -O raw mydisk.qcow2 mydisk.raw
+
+ 5g. Whole-disk bit-image backup (BASE):
+       doas dd if=/dev/ada0 of=/media/USB/ada0.img bs=4M status=progress
+       restore: swap if= and of=.
+     Better for a ZFS root: dataset-level snapshot instead:
+       doas zfs send -R zroot@snap | zstd -4 -o zroot.zst
+       # restore: zstd -d zroot.zst | doas zfs recv zroot
+
+ 5h. FAT images without mounting them: mtools (pkg) — great for
+     boot media you never want the kernel to touch:
+       mdir -i disk.img ::
+       mcopy -i disk.img README.TXT ::/
+
+ -----------------------------------------------------------------------------
+ 6. WHICH TOOL WHEN (base vs package recap)
+ -----------------------------------------------------------------------------
+   BASE SYSTEM suffices for:
+     UFS/FAT/cd9660/UDF mount, makefs ISOs, dd/mdconfig image create
+     and loop-mount, truncate sparse files, gpart partitioning,
+     ZFS send/recv, mtree integrity (see CAPABILITIES.txt B9).
+   PKGS add:
+     fusefs-ntfs      NTFS read/write (ntfs-3g)
+     fusefs-ext4fuse  ext4 read-only rescue
+     fusefs-ext2      ext2/ext3 read-write (older, non-ext4 features)
+     fusefs-exfat     exFAT read/write
+     exfat-utils      exFAT mkfs/fsck          (mkexfatfs)
+     dosfstools       FAT mkfs/fsck            (mkfs.fat)
+     mtools           FAT image files without mounting
+     qemu-img         VM disk format conversion
+     cdrtools         traditional mkisofs/cdrecord
+     e2fsprogs        ext[2-4] fsck/tools (some work directly on images)
+
+ -----------------------------------------------------------------------------
+ 7. PURITY: WHAT FS TO PICK WHEN EXPORTING DATA
+ -----------------------------------------------------------------------------
+   Another FreeBSD box:   ZFS dataset or UFS2, or a plain tarball.
+   Linux box:             ext4 via bhyve, or tarball, or FAT32/exFAT stick.
+   Windows box:           NTFS (ntfs-3g), or exFAT if > 4GB files, FAT32 if not.
+   Cameras/car/TV:        exFAT (modern) or FAT32.
+   Optical:               cd9660 with -J (Joliet) when making;
+                          -C UTF-8 when mounting.
+   Anything bootable:     raw image via dd (5c), verify with cmp.
+=============================================================================

@@ -1,0 +1,150 @@
+=============================================================================
+ ROOT TOOLING, LOGS & SECURITY — i7-11390H FreeBSD laptop
+=============================================================================
+ Complements: README.md, SOFTWARE.txt, pf.conf, post-install.sh
+ Package names verified against FreshPorts / ports tree, Oct 2026.
+
+ CORE ONE-SHOT INSTALL (pick what you want):
+
+   doas pkg install -y pftop btop lnav fail2ban rkhunter lynis iocage
+
+   Iocage/bastille only if you run jails:
+   doas pkg install -y bastille          # template-driven jail manager
+   doas pkg install -y iocage            # ZFS-based jail manager
+
+ -----------------------------------------------------------------------------
+ 1. LIVE MONITORING (see what's happening, right now)
+ -----------------------------------------------------------------------------
+ pftop      sysutils/pftop   Live view of pf states, rules, bandwidth.
+                             Like top, but for the firewall.
+                             Tips:
+                               pftop -v rules    # per-rule hit counters
+                               pftop -v state    # live state table
+                             Find what is being dropped and who's noisy.
+
+ btop       sysutils/btop    Modern all-in-one monitor: 8 threads, temps,
+                             battery, NIC, disk IO, processes.
+                             Battery tip: lower refresh (update_ms) in
+                             ~/.config/btop/btop.conf.
+
+ sockstat   base system      Listening sockets — sanity check after any
+                             install:   sockstat -l4 && sockstat -l6
+                             The last column shows the UID; anything
+                             listening as root that you don't recognize
+                             deserves a look.
+
+ fstat/lsof base/pkg         Who has which file open:
+                             lsof +D /var/log ; fstat | less
+
+ -----------------------------------------------------------------------------
+ 2. LOGS
+ -----------------------------------------------------------------------------
+ lnav       sysutils/lnav    Log navigator: opens /var/log/messages,
+                             auth.log etc. as queryable files; highlights
+                             errors, merges rotated logs, runs SQL on logs.
+                             Nice: lnav /var/log/auth.log
+
+ Where things live (memorize /var/log):
+   /var/log/messages   general system log
+   /var/log/auth.log   ssh, su, doas, login failures — watch this one
+   /var/log/pflog      BINARY pf drop log (see below for reading it)
+   /var/log/periodic.* daily/weekly digests — read them, seriously
+
+ Reading the pf log:
+   live:      doas tcpdump -n -e -ttt -i pflog0
+   from file: doas tcpdump -n -e -ttt -r /var/log/pflog | lnav
+
+ -----------------------------------------------------------------------------
+ 3. AUDIT & INTRUSION DETECTION
+ -----------------------------------------------------------------------------
+ fail2ban   security/py-fail2ban   Parse auth.log, ban via pf.
+            After install, enable the sshd jail:
+              mkdir -p /usr/local/etc/fail2ban/jail.d
+              printf '[sshd]\nenabled = true\n' \
+                > /usr/local/etc/fail2ban/jail.d/sshd.local
+              doas sysrc fail2ban_enable=YES
+              doas service fail2ban start
+            Check the bans landed in pf:  pfctl -s Anchors
+
+ rkhunter   security/rkhunter   Rootkit scanner. Baseline + run:
+              doas rkhunter --propupd    # once, on a trusted install
+              doas rkhunter --check      # manual scan
+
+ lynis      security/lynis      Full hardening audit with a score and
+            per-finding test-IDs:
+              doas lynis audit system
+              Report: /var/log/lynis-report.dat
+              Fix what has easy test-IDs first (SSH-*, CRON-*, SAFE-*),
+              re-run until the hardening index plateaus.
+
+ auditd     base system (BSM)   Kernel-level audit trail. Off by default.
+              doas sysrc auditd_enable=YES && doas service auditd start
+              Review with: praudit /var/audit/*
+              Overkill for a personal laptop; valuable on network-exposed
+              jails (run it inside those, not on the desktop host).
+
+ crowdsec   security/crowdsec   Modern fail2ban alternative with shared
+            community blocklists. Optional; heavier than fail2ban.
+
+ -----------------------------------------------------------------------------
+ 4. JAILS (when you start using them — see pf.conf section 8)
+ -----------------------------------------------------------------------------
+   iocage    sysutils/iocage    ZFS-per-jail, pf anchor per jail.
+   bastille  sysutils/bastille  Templates; thin, scriptable.
+
+   Posture: give every jail its own ZFS dataset, never mount the host's
+   rootfs read-write inside a jail, and treat jail escapes as your main
+   threat model (cap_root_rw, securelevel, no raw sockets).
+
+ -----------------------------------------------------------------------------
+ 5. HARDENING TIPS (short, high-value)
+ -----------------------------------------------------------------------------
+ 5a. Patch the base and packages on a schedule. For the base system run
+     freebsd-update regularly (its `cron` subcommand is made for crontab);
+     for packages:
+       doas pkg update && doas pkg upgrade
+     and check known-vulnerable packages:
+       doas pkg audit -F            # fetches the VuXML db and reports
+
+ 5b. Periodic already emails summaries; read them:
+       less /var/log/periodic.weekly
+     Tune which checks run via /etc/periodic.conf — the full list of
+     *_enable knobs lives in /etc/defaults/periodic.conf.
+
+ 5c. Root terminal access: keep root login local-only. /etc/ttys — set the
+     console entry to 'insecure' so even single-user mode asks for the
+     root password.
+
+ 5d. SSH (only if you enabled it — pf.conf has the commented rule):
+       /etc/ssh/sshd_config:
+         PermitRootLogin no
+         PasswordAuthentication no        # keys only
+         AllowUsers youruser
+       Combine with the <bruteforce> table or fail2ban, never raw SSH open.
+
+ 5e. Watch pf table growth:
+       doas pfctl -t bruteforce -T show
+       doas pftop -v rules               # hit counters per rule
+
+ 5f. Cheap file-integrity baseline (built-in, no package):
+       find /etc /usr/local/etc -type f | xargs sha256 > /root/etc.sum
+     Later, detect tampering:
+       sha256 -c /root/etc.sum
+     Re-baseline after every intentional config change.
+
+ 5g. After every pkg upgrade, re-check listeners:
+       sockstat -l4 -l6
+     New daemons listening on 0.0.0.0 = new inbound surface. Confirm each
+     one is intended, and keep the pf default-deny doing its job.
+
+ 5h. i3 trick: pin btop + pftop on workspace 9 as a standing dashboard;
+    one keypress away when something feels off.
+
+ 5i. Test the firewall from the OUTSIDE when your network setup changes
+     (second device / phone hotspot):
+       nmap -p- --min-rate=3000 <laptop-ip>    # expect everything filtered
+       nmap -sU --top-ports 50 <laptop-ip>
+
+ MANUALS WORTH READING ONCE:  pf(4) pfctl(8) fail2ban(1) lynis(8)
+                              audit(4) periodic(8) newsyslog(8)
+ END — Monday habit: less /var/log/periodic.weekly

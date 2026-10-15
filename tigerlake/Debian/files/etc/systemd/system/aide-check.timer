@@ -1,0 +1,16 @@
+# /etc/systemd/system/aide-check.timer
+# Daily at 04:15 with a random delay so a fleet does not stampede, and so a busy hour does not
+# delay the check. Persistent= tells systemd to run a missed check after downtime.
+
+[Unit]
+Description=Daily AIDE integrity check
+Documentation=file:///etc/systemd/system/aide-check.service
+
+[Timer]
+OnCalendar=*-*-* 04:15:00
+RandomizedDelaySec=30m
+Persistent=true
+Unit=aide-check.service
+
+[Install]
+WantedBy=timers.target

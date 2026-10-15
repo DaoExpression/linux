@@ -1,0 +1,10 @@
+#	mon — monitoring and log collection, 10.10.50.14 on the srv segment.
+#
+#	This guest polls everything else (SNMP, exporter ports, ICMP) and receives
+#	the gateway's per-host log files, so it needs outbound reach into every
+#	segment and inbound connections from nobody but the admin networks.
+inet 10.10.50.14 255.255.255.0 10.10.50.255
+inet6 fd00:10:10:50::14 64
+!route add default 10.10.50.1
+!route add -inet6 default fd00:10:10:50::1
+up

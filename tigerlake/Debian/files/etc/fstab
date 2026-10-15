@@ -1,0 +1,28 @@
+# /etc/fstab  (reference layout - replace UUIDs/labels with your own; see docs/02 §3)
+#
+# Verify with:  sudo findmnt --verify && findmnt -o TARGET,SOURCE,FSTYPE,OPTIONS
+#
+# Notes that are load-bearing, not decoration:
+#  * NO 'discard' and no periodic fstrim on encrypted volumes: TRIM on full-disk encryption
+#    leaks which regions are in use (docs/00 §5). Accept the write slowdown.
+#  * /var/log and /var/tmp are nosuid,nodev,noexec: writable + executable is how a webshell
+#    survives a reboot. /tmp is tmpfs so it is wiped on reboot by construction.
+#  * /boot/efi is umask=0077 so nothing but root can read the ESP.
+#  * TIER 3: change /boot to 'ro' here and let remount-boot-ro.service own the remount logic.
+
+# <file system>            <mount point>  <type>  <options>                                          <dump> <pass>
+UUID=AAAA-BBBB             /boot/efi      vfat    umask=0077,shortname=winnt,noexec,nosuid,nodev         0      2
+UUID=1111-2222             /boot          ext4    defaults,nosuid,nodev                                 0      2
+/dev/mapper/vg0-root       /              ext4    defaults,nodev,errors=remount-ro,noatime              0      1
+/dev/mapper/vg0-var        /var           ext4    defaults,nosuid,nodev,noatime                         0      2
+/dev/mapper/vg0-varlog     /var/log       ext4    defaults,nosuid,nodev,noexec,noatime                  0      2
+/dev/mapper/vg0-vartmp     /var/tmp       ext4    defaults,nosuid,nodev,noexec,noatime                  0      2
+/dev/mapper/vg0-home       /home          ext4    defaults,nosuid,nodev,noexec,noatime                  0      2
+/dev/mapper/vg0-srv        /srv           ext4    defaults,nosuid,nodev,noatime                         0      2
+/dev/mapper/vg0-swap       none           swap    sw                                                    0      0
+tmpfs                      /tmp           tmpfs   rw,nosuid,nodev,noexec,relatime,size=2G,mode=1777    0      0
+tmpfs                      /dev/shm       tmpfs   rw,nosuid,nodev,noexec,size=512M,mode=1777            0      0
+
+# Optional extra hardening for /proc, applied via a mount unit + systemd (systemd >= 257 supports
+# hidepid=invisible, which does not break tools that legitimately read other processes' /proc):
+#   files/etc/systemd/system/proc-hidepid.mount  -> see docs/04 §5 for the caveats

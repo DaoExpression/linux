@@ -1,0 +1,7 @@
+#	SRV aggregate.  vmd(8) attaches guest tap(4) interfaces to this
+#	veb(4) via the switch "srv" in /etc/vm.conf.
+add vlan50
+description "srv vmd switch 10.10.50.0/24"
+inet 10.10.50.1 255.255.255.0 10.10.50.255
+inet6 fd00:10:10:50::1 64
+up

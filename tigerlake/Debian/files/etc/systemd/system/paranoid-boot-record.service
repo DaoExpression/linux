@@ -1,0 +1,45 @@
+# /etc/systemd/system/paranoid-boot-record.service
+# Records one line per boot (time, boot id, kernel, Secure Boot state, lockdown, LUKS keyslots) so a
+# boot nobody performed is visible in a plain file and in the sealed journal. See docs/07 §7.
+#
+# The logic lives in /usr/local/sbin/paranoid-boot-record, deliberately:
+#   * a '%' in ExecStart is a systemd specifier - an inline printf with %s makes the unit refuse to
+#     start entirely (verify with: systemd-analyze verify this-file)
+#   * a script can be syntax-checked and test-run; a nested sh/-c/awk in a unit cannot
+#
+# Verify:  systemd-analyze verify /etc/systemd/system/paranoid-boot-record.service
+# Test:    sudo PARANOID_LOGDIR=/tmp/br /usr/local/sbin/paranoid-boot-record && cat /tmp/br/boots
+
+[Unit]
+Description=Record boot fingerprint (tamper detection)
+Documentation=file:///etc/paranoid/README.md
+After=local-fs.target
+Before=multi-user.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+NoNewPrivileges=yes
+# AF_UNIX only: this service does not talk to the network at all.
+RestrictAddressFamilies=AF_UNIX
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=@chown @setuid
+ReadWritePaths=/var/log/paranoid
+UMask=0027
+
+ExecStartPre=/bin/mkdir -p /var/log/paranoid
+ExecStart=/usr/local/sbin/paranoid-boot-record
+
+[Install]
+WantedBy=multi-user.target

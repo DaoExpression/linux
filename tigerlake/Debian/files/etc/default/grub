@@ -1,0 +1,29 @@
+# /etc/default/grub
+#
+# IMPORTANT: if you boot via a Unified Kernel Image (layout=uki, docs/03 §2 Path A), GRUB is not in
+# the chain at all and the authoritative cmdline is /etc/kernel/cmdline. Keep the two IDENTICAL so a
+# fallback boot behaves like the normal one.
+
+GRUB_DEFAULT=0
+GRUB_TIMEOUT=3
+GRUB_DISTRIBUTOR="Debian"
+GRUB_CMDLINE_LINUX_DEFAULT=""
+GRUB_CMDLINE_LINUX="audit=1 audit_backlog_limit=8192 apparmor=1 security=apparmor lsm=landlock,lockdown,yama,integrity,apparmor,bpf iommu=on iommu.strict=1 intremap=on iommu.passthrough=0 init_on_alloc=1 init_on_free=1 slab_nomerge page_alloc.shuffle=1 randomize_kstack_offset=on vsyscall=none debugfs=off lockdown=confidentiality module.sig_enforce=1 oops=panic panic=-1 panic_on_oops=1 module_blacklist=nouveau,nvidia,nvidia_drm,btusb,bluetooth,intel_ish_ipc quiet loglevel=3"
+
+# TIER 3 additions (uncomment deliberately, they cost real performance on a 4-core/8-thread part):
+#   mitigations=auto,nosmt      -> closes SMT side channels, ~30% capacity loss
+#   init_on_free=1              -> already above; also removes freed-object reuse primitives
+#   usbcore.authorized_default=0 -> blocks new USB devices at the kernel level. WARNING: this can
+#                                   block a keyboard plugged in after boot; only on racked machines.
+
+# Do not let grub-mkconfig hide the recovery path you may need.
+GRUB_DISABLE_RECOVERY="false"
+GRUB_DISABLE_OS_PROBER="true"
+# Refuse an unauthenticated boot menu (belt and braces with the firmware password).
+GRUB_DISABLE_SUBMENU="y"
+# Set the menu password with: grub-mkpasswd-pbkdf2  (then GRUB_PASSWORD / superusers in
+# /etc/grub.d/40_custom). Not required when using UKI + Secure Boot, and easy to lock yourself
+# out of; read docs/10 §6 before enabling it.
+
+# Resize a possibly-broken BIOS console: harmless if unused.
+GRUB_TERMINAL="console"

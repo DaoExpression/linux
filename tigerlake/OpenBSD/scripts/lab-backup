@@ -1,0 +1,158 @@
+#!/bin/ksh
+#
+#	lab-backup - pull configuration from every lab host into /var/backup
+#
+#	Installed to /usr/local/sbin/lab-backup and run from /etc/crontab on the
+#	gateway:
+#	    lab-backup all        every guest, plus the gateway's own /etc
+#	    lab-backup gw         just the gateway
+#	    lab-backup web mail   named hosts
+#
+#	What it backs up, and what it deliberately does not:
+#
+#	  /etc and the small service config trees are pulled from every guest.
+#	  Those are the files this repository describes, and the point of backing
+#	  them up is to have the *live* version when it has drifted from the
+#	  repository — the classic "it worked before someone fixed it" problem.
+#
+#	  Databases and mailboxes are NOT pulled here.  pg_dump and doveadm are
+#	  the right tools for those (see the db and mail trees), because a
+#	  file-level copy of a live database is not a backup.
+#
+#	Transport: rsync over ssh as the admin account, with rsync escalated by
+#	doas on the far side.  That requires, on each guest:
+#	    permit nopass keepenv :wheel cmd /usr/bin/rsync        (see doas.conf)
+#	Remove that line and this script only if you do not want pull backups.
+#
+#	Destination: /var/backup/<host>/<YYYY-MM-DD>/ on the gateway, mirrored to
+#	the storage guest's /export/backup by a final rsync.
+
+set -u
+
+GUESTS="bastion dns db storage mon web mail"
+ADDR_bastion=10.10.50.10
+ADDR_dns=10.10.50.11
+ADDR_db=10.10.50.12
+ADDR_storage=10.10.50.13
+ADDR_mon=10.10.50.14
+ADDR_web=10.10.40.20
+ADDR_mail=10.10.40.21
+
+DESTBASE=/var/backup
+KEEP=30			# days retained locally on the gateway
+REMOTE_MIRROR=backup@10.10.50.13:/export/backup/gw
+DRY=no
+[ "${1:-}" = "-n" ] && { DRY=yes; shift; }
+
+TODAY=$(date +%Y-%m-%d)
+log() { logger -t lab-backup -p local0.info "$*"; echo "lab-backup: $*"; }
+warn() { logger -t lab-backup -p local0.warning "$*"; echo "lab-backup: $*" >&2; }
+
+[ "$(id -u)" -eq 0 ] || { echo "lab-backup: must be run as root" >&2; exit 1; }
+
+targets=${*:-all}
+[ "$targets" = all ] && targets="gw $GUESTS"
+
+failures=0
+
+backup_gw() {
+	d=$DESTBASE/gw/$TODAY
+	log "backing up the gateway"
+	mkdir -p "$d" || return 1
+	# /etc without the things that are large, regenerated, or belong to the
+	# services above: package databases, pflog, and the nsd data directory.
+	[ "$DRY" = yes ] && { log "dry run: gw -> $d"; return 0; }
+	rsync -a --numeric-ids \
+		--exclude '/pf.conf.bak' \
+		--exclude '/acme' \
+		/root/.ssh /etc "$d/" || return 1
+	# The live ruleset and the zone serials are worth having as text even when
+	# they are reproduced from /etc.
+	pfctl -sr > "$d/pf.ruleset.txt" 2>/dev/null
+	pfctl -sn > "$d/pf.nat.txt" 2>/dev/null
+	vmctl status > "$d/vmctl.status.txt" 2>/dev/null
+	return 0
+}
+
+backup_guest() {
+	g=$1
+	eval "addr=\${ADDR_$g:-}"
+	[ -n "$addr" ] || { warn "no address known for $g"; return 1; }
+
+	d=$DESTBASE/$g/$TODAY
+	log "backing up $g ($addr)"
+	[ "$DRY" = yes ] && { log "dry run: $g -> $d"; return 0; }
+	mkdir -p "$d" || return 1
+
+	rsync -a --numeric-ids -e ssh --rsync-path="doas rsync" \
+		"admin@$addr:/etc/" "$d/etc/" || return 1
+
+	# Service data that is small enough to be worth a copy and is not a
+	# database: mailboxes, postgres WAL and RRD trees are excluded on purpose.
+	case "$g" in
+	dns)
+		rsync -a --numeric-ids -e ssh --rsync-path="doas rsync" \
+			"admin@$addr:/var/unbound/etc/" "$d/unbound/" 2>/dev/null ||
+			warn "$g: no /var/unbound/etc"
+		;;
+	storage)
+		# The exports list is in /etc; the data itself is already here.
+		showmount -e "$addr" > "$d/exports.txt" 2>/dev/null
+		;;
+	db)
+		# A schema dump only: it is small, it is text, and it is the part that
+		# is impossible to reconstruct.
+		ssh "admin@$addr" 'doas -u _postgresql pg_dumpall --schema-only' \
+			> "$d/schema.sql" 2>/dev/null ||
+			warn "$g: schema dump failed (is postgresql running?)"
+		;;
+	mon)
+		# collectd's CSV tree is the history; RRDs are derived and large.
+		rsync -a --numeric-ids -e ssh --rsync-path="doas rsync" \
+			"admin@$addr:/var/db/collectd/csv/" "$d/collectd-csv/" 2>/dev/null ||
+			warn "$g: no collectd csv data"
+		;;
+	esac
+	return 0
+}
+
+# ------------------------------------------------------------------ run
+for t in $targets; do
+	# NOTE: the ";" before each closing "}" is required.  A brace group is a
+	# reserved word pair, so the last command inside it needs its own
+	# terminator; bash accepts its absence, POSIX sh and ksh do not.
+	case "$t" in
+	gw) backup_gw || { warn "gateway backup failed"; failures=$((failures + 1)); } ;;
+	*)  backup_guest "$t" || { warn "$t backup failed"; failures=$((failures + 1)); } ;;
+	esac
+done
+
+# ------------------------------------------------------------------ prune
+if [ "$DRY" != yes ] && [ "$KEEP" -gt 0 ]; then
+	for host in "$DESTBASE"/*; do
+		[ -d "$host" ] || continue
+		ls -1dt "$host"/*/ 2>/dev/null | awk -v keep="$KEEP" 'NR > keep' |
+			while IFS= read -r old; do
+				rm -rf "$old" && log "pruned $old"
+			done
+	done
+fi
+
+# ------------------------------------------------------------------ mirror
+# Off-box copy.  Without this, a fire in the rack takes the backups with the
+# data they are protecting.
+if [ "$DRY" != yes ] && [ -n "$REMOTE_MIRROR" ]; then
+	for t in $targets; do
+		[ -d "$DESTBASE/$t/$TODAY" ] || continue
+		rsync -a --rsync-path="doas rsync" \
+			"$DESTBASE/$t/" "$REMOTE_MIRROR/$t/" ||
+			warn "mirror of $t to $REMOTE_MIRROR failed"
+	done
+fi
+
+if [ "$failures" -gt 0 ]; then
+	warn "$failures host(s) failed; see the log above"
+	exit 1
+fi
+log "backup complete (${TODAY})"
+exit 0

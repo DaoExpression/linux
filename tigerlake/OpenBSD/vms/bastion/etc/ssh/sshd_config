@@ -1,0 +1,69 @@
+#	/etc/ssh/sshd_config — bastion
+#
+#	This file replaces the shared baseline (vms/common/etc/ssh/sshd_config):
+#	the bastion is the one guest that humans log into, and — if you uncomment
+#	the rdr rule in the gateway's pf.conf — the only guest reachable from the
+#	outside world.  It is therefore stricter than every other guest, not
+#	looser.
+#
+#	Check: sshd -t      Apply: rcctl restart sshd
+
+Port 22
+AddressFamily inet		# no IPv6 sshd here: one less path to reason about
+ListenAddress 10.10.50.10
+
+HostKey /etc/ssh/ssh_host_ed25519_key
+HostKey /etc/ssh/ssh_host_rsa_key
+
+# --- authentication -----------------------------------------------------------
+# No root, no passwords, no keyboard-interactive, no agent forwarding: the
+# bastion exists so that admins do not put keys on the other guests, so
+# forwarding an agent through it would undo the whole design.
+PermitRootLogin no
+PubkeyAuthentication yes
+AuthorizedKeysFile .ssh/authorized_keys
+AuthenticationMethods publickey
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitEmptyPasswords no
+UseDNS no
+LoginGraceTime 20
+MaxAuthTries 3
+MaxSessions 2
+MaxStartups 2:30:5
+
+# Every login must be traceable to an admin account, from the admin networks.
+# Add the VPN pool if operators connect from outside.
+AllowUsers admin@10.10.10.0/24
+AllowUsers admin@10.10.60.0/24
+AllowGroups wheel
+
+# --- session ------------------------------------------------------------------
+StrictModes yes
+Banner /etc/ssh/banner
+PrintMotd no			# /etc/motd is huge on a fresh install; the banner
+				# is the thing an operator actually reads
+PrintLastLog yes
+PermitUserEnvironment no
+ClientAliveInterval 300
+ClientAliveCountMax 1		# drop idle sessions quickly: fewer live shells
+				# to worry about on a shared entry point
+
+# --- forwarding ---------------------------------------------------------------
+# Agent forwarding off, TCP forwarding *on*: a jump host is useless without
+# it.  Scope it in practice with "Match" blocks or restrict destinations with
+# PermitOpen per account.
+AllowAgentForwarding no
+AllowTcpForwarding yes
+PermitOpen 10.10.50.0/24:22 10.10.40.0/24:22
+PermitTunnel no
+GatewayPorts no
+X11Forwarding no
+
+# --- logging ------------------------------------------------------------------
+# VERBOSE records the public key used for every login, which is the entire
+# audit trail for a jump host.
+LogLevel VERBOSE
+SyslogFacility AUTH
+
+Subsystem	sftp	/usr/libexec/sftp-server

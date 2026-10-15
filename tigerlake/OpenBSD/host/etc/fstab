@@ -1,0 +1,39 @@
+#	$OpenBSD: fstab,v 1.17 $
+#
+#	/etc/fstab — gateway *template*
+#
+#	DO NOT overwrite the running /etc/fstab with this file.  The installer
+#	writes real DUIDs, and a wrong DUID means the box will not boot.
+#	scripts/deploy.sh lists fstab as protected for exactly this reason.
+#	Use it as a checklist: confirm your installed layout matches, and move
+#	/var/vmm onto the big partition (see docs/01-host-install.md).
+#
+#	Layout this template describes (2 x NVMe, softraid(4) mirror):
+#	    sd0a+sd1a -> softraid0 "a"  /         2G
+#	    sd0d+sd1d -> softraid0 "d"  /var      16G
+#	    sd0e+sd1e -> softraid0 "e"  /tmp      4G
+#	    sd0f+sd1f -> softraid0 "f"  /var/vmm  rest   (guest qcow2 images)
+#	    swap        on the mirror   4G
+#
+#	The DUID column is "DUID.partition": get the real value with
+#	    disklabel -h sd0 | grep duid
+#	    mount | grep ' on / '
+#
+# device		mount point	fs type	options			dump	pass#
+08a6b8e7c9d0e1f2.a	/		ffs	rw			1	1
+08a6b8e7c9d0e1f2.b	none		swap	sw			0	0
+08a6b8e7c9d0e1f2.d	/var		ffs	rw,nodev		1	2
+08a6b8e7c9d0e1f2.e	/tmp		ffs	rw,nodev,nosuid,noexec	1	2
+08a6b8e7c9d0e1f2.f	/var/vmm	ffs	rw,nodev,nosuid		1	2
+
+# The /var/vmm mount deserves a note: guests write directly to their qcow2
+# files, so it is the one place where a runaway VM can consume the whole
+# volume.  Keeping it off /var means a full disk takes down the VMs, not
+# syslog and the package database.
+
+# Optional: mount the shared storage from the storage VM for lab-wide backups.
+#10.10.50.13:/export/backup	/mnt/backup	nfs	rw,nodev,nosuid	0	0
+
+# Optional: tmpfs scratch for pf table exports.  Size it generously: a
+# tmpfs that fills up becomes unwritable instead of failing gracefully.
+#tmpfs			/var/db/pfban	tmpfs	rw,nosuid	0	0

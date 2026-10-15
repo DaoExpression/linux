@@ -1,0 +1,11 @@
+#	mail — the lab's MX, 10.10.40.21 on the dmz segment.
+#
+#	This is the one guest the internet talks to directly: the gateway's
+#	pf.conf redirects 25/465/587/993/995 here, and the DMZ switch carries the
+#	resulting traffic.  The address is fixed because SPF, DKIM and the PTR
+#	record all have to agree on it.
+inet 10.10.40.21 255.255.255.0 10.10.40.255
+inet6 fd00:10:10:40::21 64
+!route add default 10.10.40.1
+!route add -inet6 default fd00:10:10:40::1
+up

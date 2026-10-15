@@ -1,0 +1,113 @@
+## /etc/audit/rules.d/99-paranoid.rules
+## Load with:  sudo augenrules --load ; sudo auditctl -s
+##
+## Design goal: catch (a) changes to the machine's trust roots, (b) the syscalls that turn a bug into
+## a compromise, (c) the Apache config/keys/webroot. Never drown in noise: rules that would log
+## every execve by every user are deliberately NOT here.
+##
+## NOTE: '-e 2' at the bottom makes this rule set IMMUTABLE until reboot. That is intentional
+## (an attacker who gets root cannot quietly disable auditing), and it means you edit this file
+## offline and reboot to change rules.
+
+## ---------------------------------------------------------------------------
+## 1. Trust roots: identity, authentication, configuration
+## ---------------------------------------------------------------------------
+-w /etc/passwd -p wa -k identity
+-w /etc/shadow -p wa -k identity
+-w /etc/gshadow -p wa -k identity
+-w /etc/group -p wa -k identity
+-w /etc/security/opasswd -p wa -k identity
+-w /etc/sudoers -p wa -k sudoers
+-w /etc/sudoers.d/ -p wa -k sudoers
+-w /etc/pam.d/ -p wa -k pam
+-w /etc/ssh/sshd_config -p wa -k sshd-config
+-w /etc/ssh/sshd_config.d/ -p wa -k sshd-config
+-w /etc/ssh/ssh_host_ed25519_key -p wa -k sshd-hostkey
+-w /etc/security/ -p wa -k security-config
+-w /etc/login.defs -p wa -k identity
+-w /etc/nsswitch.conf -p wa -k identity
+
+## Boot and integrity stack
+-w /boot/ -p wa -k boot
+-w /etc/default/grub -p wa -k boot
+-w /etc/kernel/ -p wa -k boot
+-w /etc/fstab -p wa -k mounts
+-w /etc/crypttab -p wa -k crypto
+-w /etc/cryptsetup-initramfs/ -p wa -k crypto
+-w /etc/modprobe.d/ -p wa -k modules
+-w /etc/modules-load.d/ -p wa -k modules
+-w /etc/systemd/system/ -p wa -k systemd-units
+-w /etc/audit/ -p wa -k audit-config
+
+## The web service plane (see docs/06)
+-w /etc/apache2/ -p wa -k apache-config
+-w /etc/modsecurity/ -p wa -k apache-config
+-w /etc/ssl/private/ -p rwa -k tls-keys
+-w /etc/letsencrypt/ -p rwa -k tls-keys
+-w /var/www/ -p wa -k webroot
+-w /srv/ -p wa -k webroot
+
+## Our own policy and monitoring state
+-w /etc/paranoid/ -p wa -k paranoid-policy
+-w /etc/aide/ -p wa -k integrity-config
+-w /etc/nftables.conf -p wa -k firewall
+-w /etc/wireguard/ -p wa -k vpn
+
+## ---------------------------------------------------------------------------
+## 2. Execution and privilege primitives
+## ---------------------------------------------------------------------------
+## Binaries and libraries must not change outside a package upgrade (which auditd will show, and
+## dpkg.log will corroborate: that correlation is the point).
+-w /usr/bin/ -p wa -k binaries
+-w /usr/sbin/ -p wa -k binaries
+-w /bin/ -p wa -k binaries
+-w /sbin/ -p wa -k binaries
+-w /usr/lib/systemd/system/ -p wa -k systemd-units
+-a always,exit -F arch=b64 -F dir=/etc -F perm=wa -k etc-write
+-a always,exit -F arch=b32 -F dir=/etc -F perm=wa -k etc-write
+
+## Module and kernel-interaction syscalls
+-a always,exit -F arch=b64 -S init_module,finit_module,delete_module -k modules
+-a always,exit -F arch=b32 -S init_module,finit_module,delete_module -k modules
+-a always,exit -F arch=b64 -S kexec_load,kexec_file_load -k modules
+-a always,exit -F arch=b64 -S ptrace -k primitives
+-a always,exit -F arch=b32 -S ptrace -k primitives
+-a always,exit -F arch=b64 -S bpf -k primitives
+-a always,exit -F arch=b64 -S personality -F a0=0x0 -k primitives
+-a always,exit -F arch=b64 -S memfd_create -k primitives
+
+## Privilege escalation by unprivileged users
+-a always,exit -F arch=b64 -S setuid,setgid,setreuid,setregid,setresuid,setresgid -F auid>=1000 -F auid!=unset -k priv-esc
+-a always,exit -F arch=b32 -S setuid,setgid,setreuid,setregid,setresuid,setresgid -F auid>=1000 -F auid!=unset -k priv-esc
+-a always,exit -F arch=b64 -S chsh -F auid>=1000 -F auid!=unset -k priv-esc
+-a always,exit -F arch=b64 -S unlink,unlinkat,rename,renameat,renameat2 -F auid>=1000 -F auid!=unset -F dir=/var/www -k webroot-delete
+
+## Root's own commands: low volume, high signal (who is really administering this box?)
+-a always,exit -F arch=b64 -S execve -F euid=0 -F auid!=unset -k root-exec
+-a always,exit -F arch=b32 -S execve -F euid=0 -F auid!=unset -k root-exec
+
+## Time changes (an attacker shifting the clock hides their activity)
+-a always,exit -F arch=b64 -S adjtimex,settimeofday,clock_settime -k time-change
+-a always,exit -F arch=b64 -S clock_adjtime -F a0=0x1 -k time-change
+
+## Network configuration changes
+-a always,exit -F arch=b64 -S sethostname,setdomainname -k network-mod
+-w /etc/hosts -p wa -k network-mod
+-w /etc/nftables.conf -p wa -k network-mod
+-w /etc/network/ -p wa -k network-mod
+
+## USB / peripheral policy (pairs with USBGuard's LinuxAudit backend)
+-w /etc/usbguard/ -p wa -k usbguard
+
+## TIER 3, noisy - uncomment if you want a record of every outbound connect():
+#-a always,exit -F arch=b64 -S connect -k net-out
+
+## ---------------------------------------------------------------------------
+## 3. Make the rule set immutable and set sane failure mode
+## ---------------------------------------------------------------------------
+## -f 1: log failures rather than panic (2 = panic) or ignore them (0). A server should not reboot
+##       because auditd was briefly overwhelmed, but should tell us about it.
+-f 1
+--backlog_wait_time 60000
+## -e 2: immutable until reboot. Remove ONLY for staged rule changes.
+-e 2

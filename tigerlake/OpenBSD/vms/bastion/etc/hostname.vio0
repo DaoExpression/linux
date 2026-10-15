@@ -1,0 +1,10 @@
+#	bastion — jump host, 10.10.50.10 on the srv segment.
+#
+#	deploy.sh overwrites whatever the installer wrote here (the install-time
+#	DHCP address), which is why the address below has to match the addressing
+#	plan and vm.conf's switch for this guest ("srv").
+inet 10.10.50.10 255.255.255.0 10.10.50.255
+inet6 fd00:10:10:50::10 64
+!route add default 10.10.50.1
+!route add -inet6 default fd00:10:10:50::1
+up

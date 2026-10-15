@@ -1,0 +1,22 @@
+# /etc/logrotate.d/modsec
+# The mod_security audit log contains hostile-looking requests and request metadata. It must NOT be
+# world-readable (it can contain sensitive parameter names), and it must rotate or your /var/log
+# volume fills up during an attack flood - which is itself a denial of service.
+
+/var/log/apache2/modsec_audit.log {
+    daily
+    missingok
+    rotate 14
+    compress
+    delaycompress
+    notifempty
+    create 0640 root adm
+    sharedscripts
+    postrotate
+        if invoke-rc.d apache2 status > /dev/null 2>&1; then
+            invoke-rc.d apache2 reload > /dev/null 2>&1
+        fi
+    endscript
+    maxsize 100M
+    # Under a heavy attack this file grows in bursts; size caps matter more than the daily timer.
+}

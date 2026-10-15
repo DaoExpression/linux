@@ -1,0 +1,47 @@
+# /etc/wireguard/wg0.conf  (mode 0600, root:root)   -  copy from this example, see docs/05 §5
+#
+# The point of the tunnel is NOT "extra encryption" (SSH already has that). It is that sshd can
+# listen on an address that only exists while the tunnel is up, so the internet cannot see port 22
+# at all. Remove the WAN SSH rule in nftables once you have verified this works from a client.
+#
+# Generate keys (NEVER copy a private key from a tutorial):
+#   umask 077; wg genkey | tee server.key | wg pubkey > server.pub
+# Then paste them below, and put the CLIENT's public key in the [Peer] section.
+# Check:  sudo wg show  &&  ip -brief addr show wg0  &&  sudo wg-quick up wg0
+
+[Interface]
+Address = 10.66.0.1/24
+ListenPort = 51820
+PrivateKey = <SERVER_PRIVATE_KEY>
+
+# Keep the interface rules minimal and tied to the tunnel's lifetime so nothing lingers when it is
+# down. These are additive to /etc/nftables.conf; the input chain still defaults to drop.
+PostUp   = nft add rule inet filter input iifname "wg0" accept comment "wg0 in"
+PostDown = nft flush chain inet filter input ; nft -f /etc/nftables.conf
+# Note the PostDown: rather than trying to delete the exact rule handle (fragile), we rebuild the
+# ruleset from the file. That guarantees no stale accept rules survive a tunnel restart.
+
+# No server-side NAT, no forwarding: this is an admin plane, not a VPN for browsing.
+# If you ever add a second peer (a jump host), give it a /32 and keep them from talking to
+# each other with: PreUp = nft add rule inet filter forward iifname "wg0" oifname "wg0" drop
+
+[Peer]
+# Your laptop / admin machine. One peer per device, and revoke by deleting the peer.
+PublicKey = <CLIENT_PUBLIC_KEY>
+AllowedIPs = 10.66.0.2/32
+PersistentKeepalive = 25
+
+# --------------------------------------------------------------------------------------------
+# Client config equivalent (keep on the admin machine, mode 0600, back it up offline):
+#
+# [Interface]
+# Address = 10.66.0.2/32
+# PrivateKey = <CLIENT_PRIVATE_KEY>
+# DNS = 10.66.0.1          # optional: use the server's resolver over the tunnel
+#
+# [Peer]
+# PublicKey = <SERVER_PUBLIC_KEY>
+# Endpoint = <server-ip>:51820
+# AllowedIPs = 10.66.0.0/24, <server-ip>/32
+# PersistentKeepalive = 25
+# --------------------------------------------------------------------------------------------

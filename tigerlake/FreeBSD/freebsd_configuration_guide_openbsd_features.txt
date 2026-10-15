@@ -1,0 +1,172 @@
+===============================================================================
+     FREEBSD CONFIGURATION GUIDE: OPENBSD-DERIVED & INSPIRED FEATURES
+===============================================================================
+
+This configuration file covers FreeBSD system settings, daemon configurations,
+and security tools that originate from or are heavily inspired by OpenBSD.
+
+Each section includes:
+  1. What the feature does
+  2. The OpenBSD origin / influence
+  3. Recommended configuration settings with inline commentary
+
+-------------------------------------------------------------------------------
+1. OPENSSH (/etc/ssh/sshd_config)
+-------------------------------------------------------------------------------
+OpenSSH is developed directly under the OpenBSD project. FreeBSD imports it
+into the base system. Configure modern security defaults here:
+
+# /etc/ssh/sshd_config snippet
+
+# Disable root login over password (use SSH keys or disable entirely)
+PermitRootLogin prohibit-password
+
+# Force publickey authentication for higher security
+PasswordAuthentication no
+ChallengeResponseAuthentication no
+
+# Restrict allowed key algorithms to modern defaults (Ed25519)
+PubkeyAcceptedKeyTypes ssh-ed25519,sk-ssh-ed25519@openssh.com
+
+# Enable OpenSSH security keys (FIDO2 / U2F hardware keys)
+# Usage: ssh-keygen -t ed25519-sk
+SecurityKeyProvider internal
+
+# Enforce strict permissions check on user home directories
+StrictModes yes
+
+# Log detailed session information for auditing
+LogLevel VERBOSE
+
+
+-------------------------------------------------------------------------------
+2. PACKET FILTER FIREWALL (/etc/pf.conf)
+-------------------------------------------------------------------------------
+FreeBSD's pf(4) originated from OpenBSD's PF firewall. While FreeBSD added
+multithreading support, the core configuration syntax remains very similar.
+
+# Enable PF in /etc/rc.conf:
+# pf_enable="YES"
+# pf_rules="/etc/pf.conf"
+# pf_flags=""
+# pflog_enable="YES"
+
+# /etc/pf.conf example
+
+# 1. Macros & Interfaces
+ext_if = "em0" # Change to your primary network interface (e.g., vtnet0, igb0)
+
+# 2. Options (Default behavior)
+set skip on lo0
+set block-policy drop
+set loginterface $ext_if
+
+# 3. Normalization (Reassemble fragmented packets)
+scrub in all
+
+# 4. Anti-Spoofing
+antispoof quick for $ext_if
+
+# 5. Default Filter Policy (Default Deny)
+block all
+
+# 6. Outbound Traffic Rule (Stateful filtering)
+pass out quick on $ext_if keep state
+
+# 7. Inbound Services (Tailor to your system roles)
+# Allow SSH on port 22 with rate limiting
+pass in on $ext_if proto tcp to any port 22 \
+    flags S/SA keep state \
+    (max-src-conn 10, max-src-conn-rate 5/60, overload <bad_hosts> flush global)
+
+
+-------------------------------------------------------------------------------
+3. TMUX TERMINAL MULTIPLEXER (~/.tmux.conf)
+-------------------------------------------------------------------------------
+tmux is maintained as part of the OpenBSD system. It is included in FreeBSD via
+ports/packages (`pkg install tmux`) or built natively.
+
+# ~/.tmux.conf recommended defaults
+
+# Set prefix key to Ctrl-a (more comfortable than Ctrl-b)
+unbind C-b
+set -g prefix C-a
+bind C-a send-prefix
+
+# Enable 256-color support
+set -g default-terminal "screen-256color"
+
+# Enable mouse support for pane switching and resizing
+set -g mouse on
+
+# Increase scrollback history limit (default is 2000)
+set -g history-limit 10000
+
+# Start window indexing at 1 instead of 0
+set -g base-index 1
+setw -g pane-base-index 1
+
+
+-------------------------------------------------------------------------------
+4. CAPSICUM SANDBOXING & PRIVILEGE REDUCTION
+-------------------------------------------------------------------------------
+While OpenBSD uses pledge(2) and unveil(2) for application sandboxing, FreeBSD
+uses Capsicum. FreeBSD utility binaries (like tcpdump, dhclient, tar) use
+Capsicum out of the box.
+
+To launch a process under strict Capsicum capability mode in userland:
+
+# Run a command restricted strictly to explicit file descriptors (casper/cap_enter)
+# Example: Using system tools designed with Capsicum support:
+$ dumpfs -C /dev/ada0s1a   # Uses Capsicum capability mode where supported
+
+
+-------------------------------------------------------------------------------
+5. ASLR & MEMORY HARDENING SEEDING (/etc/sysctl.conf)
+-------------------------------------------------------------------------------
+OpenBSD heavily popularized strict memory protections (W^X, ASLR, random stack
+gap). FreeBSD incorporates these protections into kernel tunables:
+
+# Add to /etc/sysctl.conf
+
+# Enable Address Space Layout Randomization (ASLR)
+kern.elf64.aslr.enable=1
+kern.elf32.aslr.enable=1
+
+# Enable ASLR stack randomization
+kern.elf64.aslr.pie_enable=1
+kern.elf32.aslr.pie_enable=1
+
+# Hide process information from other users (privacy & defense in depth)
+security.bsd.see_other_uids=0
+security.bsd.see_other_gids=0
+security.bsd.see_jail_proc=0
+
+# Disable unprivileged process debugging (prevents memory inspection attacks)
+security.bsd.unprivileged_proc_debug=0
+
+# Randomize process IDs to prevent predictable PID attacks
+kern.randompid=1
+
+
+-------------------------------------------------------------------------------
+6. MANDOC DOCUMENTATION SYSTEM
+-------------------------------------------------------------------------------
+FreeBSD uses mandoc (developed by OpenBSD) for processing manual pages.
+
+# Search system documentation efficiently using mandoc-powered apropos:
+$ apropos security
+$ apropos -s 2 pledge   # Search section 2 manual pages
+
+# Render a manual page cleanly:
+$ mandoc /usr/share/man/man1/ls.1.gz | less
+
+
+===============================================================================
+SUMMARY & RECOMMENDATIONS
+===============================================================================
+- Network & Firewall: Use pf(4) for clean syntax and native stateful filtering.
+- Remote Access: Enforce Ed25519 and FIDO2 keys in OpenSSH.
+- Kernel Security: Enable ASLR and PID randomization via sysctl.conf.
+- User Environment: Utilize tmux and mandoc for terminal productivity.
+===============================================================================

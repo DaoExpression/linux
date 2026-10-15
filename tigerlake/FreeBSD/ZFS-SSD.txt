@@ -1,0 +1,158 @@
+=============================================================================
+ ZFS ON AN SSD — performance tuning & features
+=============================================================================
+ For: i7-11390H laptop, NVMe SSD, FreeBSD 14.x (OpenZFS), 16GB RAM plan.
+ Complements: CAPABILITIES.txt (§A2 ZFS overview, bectl), FILESYSTEMS.txt
+ (image creation), rc.conf / loader.conf / sysctl.conf in this directory.
+
+ -----------------------------------------------------------------------------
+ 1. THE ONE-TIME SETUP (during bsdinstall or after)
+ -----------------------------------------------------------------------------
+ bsdinstall's ZFS option is good: pick "stripe" (single SSD; ZFS mirrors
+   need 2+ disks — a laptop only has one), choose your keyfile/password
+   if you want encryption (see §5).
+ Post-install, always do these FIRST:
+     doas zpool list
+     doas zfs set compression=lz4 zroot          # or zstd: see §3
+     Apply units: the NVMe disk on FreeBSD is nvme0 with partitions
+     nvme0p1..p4 (Linux-style nvme0n1p4 names do not apply here).
+     TRIM (next section) and ARC cap (§4) are the two must-dos.
+
+ -----------------------------------------------------------------------------
+ 2. TRIM — critical for SSD health & steady performance
+ -----------------------------------------------------------------------------
+ Modern FreeBSD (OpenZFS) does NOT trim by default for pools created
+ before autotrim existed, and autotrim remains opt-in at pool level:
+
+     doas zpool set autotrim=on zroot        # automatic TRIM going forward
+     doas zpool status zroot                 # confirm autotrim: on
+
+ Manual TRIM (run occasionally anyway, monthly is fine):
+     doas zpool trim zroot
+     doas zpool status -t zroot              # see TRIM progress %
+
+ Periodic-friendly TRIM via cron or a one-line in /etc/crontab:
+     0 4 * * * root  zpool trim zroot
+ TRIM tips:
+   * autotrim=on is nearly free on NVMe (queuing, throttled by device).
+   * Do NOT set autotrim on pools NOT made of SSDs (HDDs ignore it).
+   * FILL MODE: an SSD >85% full will slow down and suffer more writes;
+     keep your zroot under ~80% — check with zpool list CAP column.
+ -----------------------------------------------------------------------------
+
+ -----------------------------------------------------------------------------
+ 3. COMPRESSION — free space AND speed on modern CPUs
+ -----------------------------------------------------------------------------
+ This i7 (8 threads, AVX2) is so fast that compressed datasets are
+ often LOWER latency than uncompressed (less SSD traffic).
+
+     # per-dataset; default on 14.x is "on" = lz4:
+     doas zfs set compression=lz4 zroot
+     # zstd beats lz4 at levels 1-3 on CPU-rich machines:
+     doas zfs set compression=zstd-3 zroot/usr
+     verify effect:
+       zfs get compression,compressratio zroot/usr
+
+ TIP: set it BEFORE heavy writes; existing blocks stay as they were.
+ TIP: verify with compressratio — 1.5-2x is typical on source trees,
+      1.2-1.4 on media-heavy home dirs (little to gain on video).
+
+ -----------------------------------------------------------------------------
+ 4. ARC (RAM cache) tuning — the laptop-balanced numbers
+ -----------------------------------------------------------------------------
+ OpenZFS on FreeBSD defaults to using up to half of RAM as ARC for
+ desktop-ish setups; on a 16GB laptop that's often too much 8GB+, so set
+ an explicit cap in /boot/loader.conf (needs reboot):
+
+     # /boot/loader.conf — ARC cap (8GB on a 16GB box):
+     vfs.zfs.arc_max="8G"
+
+ Inspect/tune live (temporary, until next boot):
+     doas sysctl vfs.zfs.arc_max=8589934592
+     # monitor ARC size and hit rate:
+     doas sysctl kstat.zfs.misc.arcstats.size
+     doas sysctl kstat.zfs.misc.arcstats.hits
+     # or a live view:
+     doas arcstat 1                # pkg: arcstat (OpenZFS tool)
+
+ L2ARC (SSD as read-cache) — DON'T on a single-SSD laptop: the SSD is
+ your data disk; competing with itself makes no sense. L2ARC is for
+ servers with a fast boot disk + hot data that lives on slow disks.
+ If you ever want it (server scenario), knobs live in loader.conf:
+     vfs.zfs.l2arc_write_max     # bytes/s fed to L2ARC at steady state
+     vfs.zfs.l2arc_write_boost   # bytes/s while warming up
+
+ -----------------------------------------------------------------------------
+ 5. ENCRYPTION & DATASET DESIGN (worth doing on a laptop)
+ -----------------------------------------------------------------------------
+ Native ZFS encryption is per-DATASET and supports FreeBSD keys:
+     # during install: bsdinstall ZFS menu lets you set it.
+     # after: make an encrypted dataset for private data:
+       doas zfs create -o encryption=on -o keyformat=passphrase zroot/private
+       zfs mount -l zroot/private          # prompts for passphrase
+ Layout advice (desktop):
+     zroot/ROOT/...  boot envs (bectl) — leave alone
+     zroot/usr/home  user data         — snapshot/replicate this one
+     zroot/private   encrypted set     — passphrase kept in passwd store
+     zroot/tmp, /var — their own datasets: better quota control
+ Suspend/resume with encrypted sets: they stay mounted; geli-style
+     detach-on-suspend is NOT ZFS behavior — plan accordingly
+     (screensaver lock + S3 suspend is your friend).
+
+ -----------------------------------------------------------------------------
+ 6. SNAPSHOTS & BOOT ENVIRONMENTS — the good ZFS life
+ -----------------------------------------------------------------------------
+ bectl (base) — snapshot / and roll back bad upgrades:
+     doas bectl create before-pkg-upgrade
+     doas bectl activate before-pkg-upgrade      # pick at next boot
+     doas bectl list ; doas bectl destroy old-one
+ freebsd-update and major upgrades create boot envs for you (if you let it).
+
+ Automatic snapshots (pkg: zfsnap or zfs-snapshot-mgmt, or plain cron):
+     */15 * * * * root  /usr/local/sbin/zfsnap snapshot -a -r -s 7d zroot
+ Restore a single file (desktop candy):
+     zfs list -t snapshot -s creation | tail
+     cp /zroot/usr/home/.zfs/snapshot/<snap>/path/to/file .
+
+     The ".zfs" hidden dir exists in EVERY dataset — even one 100%
+     browsable via ls -a. Useful: read files straight from a snapshot
+     without mounting anything.
+
+ Six handy one-liners:
+     zfs list -o name,used,avail,refer,mountpoint -r zroot   # tree view
+     zfs get all zroot/usr/home | less                       # every opt
+     zfs diff zroot/usr/home@yesterday                       # what changed?
+     zpool iostat -v 2                                       # live IO by vdev
+     zpool get all zroot | grep -E 'trim|autotrim|ashift'    # key props
+     zfs destroy -nv zroot/usr/home@old-test                 # dry-run destroy
+
+ -----------------------------------------------------------------------------
+ 7. OTHER SOFT CONTROLS WORTH KNOWING (server-side but useful)
+ -----------------------------------------------------------------------------
+ # ashift — must be right: 12 for 4K sectors (all modern SSDs):
+ zpool get ashift zroot                     # check; DON'T change post-create
+ # sync behavior — laptop default is fine; on battery-heavy write jobs:
+ zfs set sync=standard zroot                # never set disabled on data you love
+ # quotas per user, desktop corner:
+ zfs set quota=50G zroot/usr/home
+ zfs create -o quota=10G zroot/home/guest
+ # dedup: say NO on a laptop (RAM-hungry, slow) — zstd already wins.
+ # atime: off saves writes (desktop):
+ zfs set atime=off zroot
+ # copies=2 for the tiny critical set (self-healing on bitrot):
+ zfs set copies=2 zroot/root-critical
+
+ -----------------------------------------------------------------------------
+ 8. HEALTH ROUTINE (5 min/month, all base tools)
+ -----------------------------------------------------------------------------
+     doas zpool status -v zroot      # want ONLINE everywhere, 0 errors
+     doas zpool list                 # CAP < 80%!
+     doas zpool iostat -l 5 zroot    # latency columns — spikes = SSD stress
+     doas smartctl -a /dev/nvme0     # pkg smartmontools; % remaining life
+     doas zfs scrub zroot            # full check; schedule monthly via cron
+                                    # (periodic has weekly userland checks
+                                    #  built-in: check /etc/periodic.conf)
+ -----------------------------------------------------------------------------
+ END. If you only did §2 (TRIM), §3 (compression) and §4 (ARC cap),
+ you've captured 95% of the achievable SSD+ZFS performance.
+=============================================================================

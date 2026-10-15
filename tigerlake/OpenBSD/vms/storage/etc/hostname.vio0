@@ -1,0 +1,13 @@
+#	storage — NFS, Samba and backups, 10.10.50.13 on the srv segment.
+#
+#	This guest owns the lab's shared data.  Give it the largest disk (40G in
+#	vm.conf) and consider a second disk added to vm.conf for the backup volume
+#	so that a full data volume cannot take the backups with it:
+#	    vmctl create -s 20G /var/vmm/storage-data.qcow2
+#	    # then in vm.conf:
+#	    disk "/var/vmm/storage-data.qcow2"
+inet 10.10.50.13 255.255.255.0 10.10.50.255
+inet6 fd00:10:10:50::13 64
+!route add default 10.10.50.1
+!route add -inet6 default fd00:10:10:50::1
+up

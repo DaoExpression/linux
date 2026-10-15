@@ -1,0 +1,25 @@
+# /etc/logrotate.d/apache2
+# Rotation for the case where you kept file-based logging instead of piping to journald
+# (docs/06 §9). /var/log is mounted nosuid,nodev,noexec, so a dropped webshell cannot run from here.
+#
+# If you use the journald CustomLog from docs/06, this file only needs to cover the mod_security
+# audit log (see logrotate.d/modsec separately).
+
+/var/log/apache2/*.log {
+    daily
+    missingok
+    rotate 30
+    compress
+    delaycompress
+    notifempty
+    create 0640 root adm
+    sharedscripts
+    # Reload, never restart: a failed restart at 03:00 is an outage nobody is awake to fix.
+    postrotate
+        if invoke-rc.d apache2 status > /dev/null 2>&1; then
+            invoke-rc.d apache2 reload > /dev/null 2>&1
+        fi
+    endscript
+    # Do not let the log volume fill: rotate the volume, do not just hope.
+    maxsize 200M
+}

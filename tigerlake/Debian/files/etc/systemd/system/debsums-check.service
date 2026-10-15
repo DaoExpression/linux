@@ -1,0 +1,44 @@
+# /etc/systemd/system/debsums-check.service
+# Answers a different question than AIDE: "did any file shipped by a Debian package change?"
+# Cheap enough to run daily. See docs/04 §8.
+
+[Unit]
+Description=debsums package file integrity check
+After=local-fs.target
+Conflicts=debsums-check.timer
+
+[Service]
+Type=oneshot
+Nice=19
+IOSchedulingClass=idle
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+NoNewPrivileges=yes
+CapabilityBoundingSet=CAP_DAC_READ_SEARCH
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources @obsolete @mount @debug @cpu-emulation @swap @keyring
+ReadWritePaths=/var/log/paranoid
+UMask=0027
+
+ExecStartPre=/bin/mkdir -p /var/log/paranoid
+# -s = report only files whose checksum does NOT match (silent when clean).
+# The package does not ship md5sums for every package; missing ones are reported separately and are
+# NOT a finding (see the filter).
+ExecStart=/bin/sh -c '/usr/bin/debsums -s 2>&1 | grep -v -E "no md5sums|not installed" || true'
+StandardOutput=append:/var/log/paranoid/debsums.log
+StandardError=append:/var/log/paranoid/debsums.log
+
+[Install]
+WantedBy=multi-user.target

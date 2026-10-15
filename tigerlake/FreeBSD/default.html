@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="article.css">
+    <!--   SECURITY -->
+    <!-- ONLY ACCEPT EXTERNAL SOURCES FROM BANDCAMP.COM -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://bandcamp.com; frame-src 'self' https://bandcamp.com;">
+    <meta name="X-Content-Type-Options" content="nosniff">
+    <meta name="X-Frame-Options" content="DENY">
+    <meta name="Referrer-Policy" content="no-referrer">
+    <meta name="Strict-Transport-Security" content="max-age=31536000; includeSubDomains">
+    <!-- TITLE-WILL-BE-HERE-PLEASE -->
+    <title>Your FreeBSD Laptop — From Nothing to Locked-Down Desktop</title>
+    <meta name="description" content="Complete FreeBSD installation and lockdown walkthrough for an Intel i7-11390H laptop: install stick, ZFS with encryption, pf firewall, doas, xorg tuning, jails scenarios, SSD/ZFS performance, privacy hardening and system lockdown.">
+    <meta name="keywords" content="freebsd, install, zfs, pf, doas, xorg, lockdown, laptop">
+    <!-- MASTODON REFERENCE --> 
+    <meta name="fediverse:creator" content="@TaoExpression@mastodon.social">
+  </head>
+
+  <body>
+    <!-- TITLE -->
+    <header>
+      <h1 class="title1">Your FreeBSD Laptop — From Nothing to Locked-Down Desktop</h1>
+    </header>
+    <!-- PLAYER -->
+    <!-- <div class="player"></div> -->
+
+    <!--TOP COLOR NOTATION-->
+    <!-- <div class="textbox black"> -->
+    <!-- <p class="center">
+      About Article Colors <br><br>
+      <span class="r">Color Notation</span><br> 
+        <span class="b">Color Notation</span><br>
+        <span class="gr">Color Notation</span><br>
+        <a href="#">Internal Link</a><br>
+        <a href="#" class="external">External Link</a><br>
+        <i>Italic</i>, <b>Bold</b>, <u>Under-line</u> & <code>code</code><br><br>
+      </p>
+    </div>
+    -->
+    <div class="textbox black">
+      <!-- ARTICLE CONTENT HERE -->
+      <p><em>The total journey is ten steps plus appendices. You bring the laptop and one empty USB stick; this page brings everything else. <span class="opt">Options you may skip are italic.</span> <u>Tips worth remembering appear underlined.</u> <strong>FreeBSD features are bold.</strong></em></p>
+
+      <nav>
+        <a href="#intro">Step 0 — what you will end up with</a>
+        <a href="#step1">Step 1 — make the install stick</a>
+        <a href="#step2">Step 2 — install (ZFS + encryption)</a>
+        <a href="#cfg-rc.conf">Step 3 — root system files (rc.conf)</a>
+        <a href="#cfg-loader.conf">Step 4 — bootloader (loader.conf)</a>
+        <a href="#cfg-sysctl.conf">Step 5 — kernel tuning (sysctl.conf)</a>
+        <a href="#cfg-doas.conf">Step 6 — admin rights (doas.conf)</a>
+        <a href="#cfg-pf.conf">Step 7 — firewall (pf.conf)</a>
+        <a href="#cfg-xorg.conf">Step 8 — graphics recipe (xorg.conf)</a>
+        <a href="#step9">Step 9 — driver installer (post-install.sh)</a>
+        <a href="#step10">Step 10 — software for the desktop</a>
+        <a href="#extra-filesystems">Appendix A — disks, images &amp; files</a>
+        <a href="#extra-zfs">Appendix B — living on ZFS</a>
+        <a href="#extra-privacy">Appendix C — privacy layer</a>
+        <a href="#extra-capabilities">Appendix D — what makes FreeBSD FreeBSD</a>
+        <a href="#extra-security">Appendix E — logs &amp; monitoring</a>
+        <a href="#extra-lockdown">Appendix F — lock it all down</a>
+        <a href="#finish">Finish — proof of work checklist</a>
+      </nav>
+
+      <h2 id="intro"><span class="stepnum">Step&nbsp;0.</span> what you will end up with</h2>
+      <p>At the end of this guide the laptop runs <strong>FreeBSD</strong>, a complete operating system assembled as <strong>one coherent base</strong> — kernel, drivers and tools versioned together — plus a desktop of your choosing, behind a <strong>pf firewall</strong>, on a <strong>ZFS</strong> disk with TRIM, using <strong>doas</strong> for admin powers instead of ever logging in as root, and finally <strong>locked</strong> so nobody can change it without the admin password — not even by booting another kernel.</p>
+      <p><span class="opt">This machine's parts are FreeBSD-friendly: the <strong>Iris Xe</strong> works through <em>i915kms</em>, the <strong>AX201</strong> Wi-Fi through <em>iwlwifi</em>, the <strong>I219-V</strong> network chip through <em>em</em> — all native or one package away.</span></p>
+      <table>
+        <tr><th>Hardware</th><th>What FreeBSD does with it</th></tr>
+        <tr><td>i7-11390H, 8 threads</td><td><strong>native support</strong>; powerd governs clocks</td></tr>
+        <tr><td>Iris Xe graphics</td><td><strong>drm-kmod</strong> package → i915kms</td></tr>
+        <tr><td>AX201 Wi-Fi 6</td><td><strong>iwlwifi(4)</strong> driver + firmware pkg</td></tr>
+        <tr><td>I219-V ethernet</td><td><strong>em(4)</strong>, fully native</td></tr>
+        <tr><td>NVMe SSD</td><td><strong>ZFS</strong> with native TRIM + compression</td></tr>
+      </table>
+      <div class="warn"><strong>The only unrecoverable step is Step 1: everything currently on the laptop's disk will be erased.</strong> <u>Move what matters to another machine or account before continuing.</u></div>
+
+      <h2 id="step1"><span class="stepnum">Step&nbsp;1.</span> make the install stick</h2>
+      <ol>
+        <li><strong>Download</strong> the <a class="external" href="https://www.freebsd.org/where/">current RELEASE memstick image</a> — pick <em>amd64-memstick.img.xz</em>. <span class="opt">A RELEASE build is the stable-and-patched choice; newer branches exist and are covered in Appendix D.</span></li>
+        <li><strong>Write the image to a USB stick</strong> of 4&nbsp;GB or more (everything on it is lost). From Windows use <a class="external" href="https://etcher.balena.io/">balenaEtcher</a>; from Linux:<br>
+        <code>unxz FreeBSD-14.3-RELEASE-amd64-memstick.img.xz<br>
+        dd if=FreeBSD-14.3-RELEASE-amd64-memstick.img of=/dev/sdX bs=1M conv=sync status=progress</code><br>
+        <u>Always point dd at the whole stick</u> (<code>/dev/sdX</code>), never at a partition like <code>/dev/sdX1</code>.</li>
+        <li><strong>Verify the copy:</strong> <code>cmp /dev/sdX image.img</code> — <u>a silent cmp is the difference between a working installer and a random hang halfway through.</u></li>
+        <li><strong>Boot it:</strong> tap the boot-menu key (<code>F12</code>/<code>F2</code>/<code>ESC</code>), choose the <em>UEFI:</em> USB entry. The official <a class="external" href="https://docs.freebsd.org/en/books/handbook/install/">Handbook installation chapter</a> has imagery for every screen.</li>
+      </ol>
+
+      <h2 id="step2"><span class="stepnum">Step&nbsp;2.</span> install: root filesystem on ZFS, encrypted</h2>
+      <ol>
+        <li>Installer menu: <strong>Install</strong>.</li>
+        <li>Keyboard: your layout — <em>pt</em> was pre-set to match.</li>
+        <li>Hostname: <em>freebsd-desktop</em> — <u>a neutral hostname keeps every network log from carrying your real name.</u></li>
+        <li>Partitioning: <strong>ZFS</strong>, <strong>Stripe</strong> (single SSD; a mirror needs two drives), <strong>enable encryption with a passphrase</strong> — foundation of Appendix F.</li>
+        <li>Target disk: the internal NVMe <em>only</em>. <u>The USB stick itself appears as da0 — selecting it destroys the installer.</u></li>
+        <li>Root password; then <strong>add your user to the wheel group</strong> — wheel is what doas.conf will authorize (Step 6).</li>
+        <li>Networking: enter Wi-Fi name/password; the installer writes <strong>wpa_supplicant.conf</strong> for you. <span class="opt">Cable users pick em0; both are configured in Step 3.</span></li>
+        <li>Reboot and remove the stick.</li>
+      </ol>
+
+      <h2 id="cfg-rc.conf"><span class="stepnum">Step&nbsp;3.</span> root system settings — rc.conf</h2>
+      <p>The <strong>rc.conf file is the switchboard</strong>: one line per service, interface, behavior. Merge the lines below or paste into <code>/etc/rc.conf</code> learning each as you go:</p>
+      <div class="codewrap">
+<code># /etc/rc.conf — desktop laptop: i7-11390H (Tiger Lake, Iris Xe), AX201 Wi-Fi, I219 Ethernet, HDA audio<br></code>
+<code># Merge into the installed system&#x27;s /etc/rc.conf with post-install.sh (does NOT overwrite).<br></code>
+<code><br></code>
+<code># ----- General -----<br></code>
+<code>hostname=&quot;freebsd-desktop&quot;        # change to taste<br></code>
+<code>keymap=&quot;pt&quot;                       # Portuguese console keymap; adjust if different<br></code>
+<code>clear_tmp_enable=&quot;YES&quot;<br></code>
+<code>syslogd_flags=&quot;-ss&quot;               # do not open a remote syslog socket<br></code>
+<code>sendmail_enable=&quot;NONE&quot;<br></code>
+<code>update_motd=&quot;NO&quot;                  # less boot noise; set YES if you want MOTD<br></code>
+<code><br></code>
+<code># ----- Graphics: Intel Tiger Lake (UHD/Iris Xe Gen12) through drm-kmod -----<br></code>
+<code>kld_list=&quot;i915kms&quot;<br></code>
+<code><br></code>
+<code># ----- Networking: onboard Intel Ethernet (I219-V) -----<br></code>
+<code>defaultroute_delay=&quot;0&quot;            # don&#x27;t stall boot waiting for DHCP<br></code>
+<code>ifconfig_em0=&quot;DHCP&quot;               # rename with: ifconfig -l<br></code>
+<code><br></code>
+<code># ----- Wi-Fi: Intel AX201 (iwlwifi, 802.11ax) -----<br></code>
+<code>wlans_iwlwifi0=&quot;wlan0&quot;<br></code>
+<code>create_args_wlan0=&quot;wlandev iwlwifi0&quot;<br></code>
+<code><br></code>
+<code># Prefer Wi-Fi as default route; remove em0 line above if fully wireless:<br></code>
+<code># ifconfig_wlan0=&quot;WPA SYNCDHCP&quot;<br></code>
+<code>ifconfig_wlan0=&quot;WPA SYNCDHCP country PT&quot;   # regdomain helps 5GHz channel power/X<br></code>
+<code><br></code>
+<code># ----- Firewall: pf (enabled; ruleset ships as pf.conf) -----<br></code>
+<code>pf_enable=&quot;YES&quot;<br></code>
+<code>pf_rules=&quot;/etc/pf.conf&quot;<br></code>
+<code>pflog_enable=&quot;YES&quot;<br></code>
+<code>pflog_logfile=&quot;/var/log/pflog&quot;<br></code>
+<code># Uncomment if you later run jails behind NAT:<br></code>
+<code># pf_flags=&quot;&quot;                     # (empty — ruleset handles everything)<br></code>
+<code><br></code>
+<code># ----- Jails (optional — uncomment the block to use the bridge below) -----<br></code>
+<code># Jail bridge: keeps internal jail traffic off your LAN segment.<br></code>
+<code># Create it once:<br></code>
+<code>#   ifconfig bridge0 create<br></code>
+<code>cloned_interfaces=&quot;bridge0&quot;       # bridge for jail networking (uncomment-free option, see pf.conf)<br></code>
+<code>ifconfig_bridge0=&quot;inet 10.0.100.1/24 descr &#x27;jail bridge&#x27;&quot;    # host side<br></code>
+<code>ifconfig_bridge0_member=&quot;em0&quot;     # comment out if you want a NAT-only bridge (see pf.conf)<br></code>
+<code># Explanation:<br></code>
+<code>#  * With bridge0_member=em0 the jail VMs appear on the LAN (bridged mode).<br></code>
+<code>#  * Without it you must NAT via pf (see &quot;NAT for jails&quot; inside pf.conf).<br></code>
+<code><br></code>
+<code>autobridge_enable=&quot;YES&quot;           # auto-populate bridge0 members on boot<br></code>
+<code>autobridge_interfaces=&quot;bridge0&quot;<br></code>
+<code><br></code>
+<code># ----- Services -----<br></code>
+<code>dbus_enable=&quot;YES&quot;<br></code>
+<code>moused_enable=&quot;YES&quot;<br></code>
+<code>powerd_enable=&quot;YES&quot;<br></code>
+<code>powerd_flags=&quot;-a hiadaptive -b adaptive -n adaptive&quot;   # CPU freq scaling on AC/battery<br></code>
+<code><br></code>
+<code># ----- Display manager + misc hardware -----<br></code>
+<code>sddm_enable=&quot;YES&quot;                 # graphical login manager (SDDM)<br></code>
+<code>cups_enable=&quot;NO&quot;                  # set YES if you need printing<br></code>
+<code>avahi_daemon_enable=&quot;NO&quot;<br></code>
+<code>avahi_dnsconfd_enable=&quot;NO&quot;<br></code>
+<code><br></code>
+<code># ----- Optional: sshd for remote management of the laptop and jails -----<br></code>
+<code># sshd_enable=&quot;YES&quot;                # uncomment only if you actually need SSH<br></code>
+<code><br></code>
+<code># ----- Local scripts -----<br></code>
+<code># Nothing custom needed for this hardware.<br></code>
+</div>
+
+      <h2 id="cfg-loader.conf"><span class="stepnum">Step&nbsp;4.</span> boot-time settings — loader.conf</h2>
+      <p><strong>loader.conf runs before the kernel</strong>: it loads modules too early for later, sets console resolution. Two values matter most — <strong>zfs_load</strong> (root filesystem) and the framebuffer. <span class="opt">ARC cap (Appendix B) and the loader password (Appendix F) also live here.</span></p>
+      <div class="codewrap">
+<code># /boot/loader.conf — i7-11390H (Tiger Lake) laptop, desktop use<br></code>
+<code># Merge into /boot/loader.conf on the installed system (post-install.sh handles it).<br></code>
+<code><br></code>
+<code># ----- Kernel modules (GPU firmware must be installed via pkg first: drm-kmod) -----<br></code>
+<code># i915kms is loaded from rc.conf kld_list instead; keep that as the single source.<br></code>
+<code><br></code>
+<code># ----- Filesystem -----<br></code>
+<code>zfs_load=&quot;YES&quot;                    # if you installed on ZFS; harmless otherwise<br></code>
+<code># tmpfs_load=&quot;YES&quot;                # default in GENERIC already<br></code>
+<code><br></code>
+<code># ----- Console / framebuffer -----<br></code>
+<code>kern.vt.fb.default_width=&quot;1920&quot;<br></code>
+<code>kern.vt.fb.default_height=&quot;1080&quot;<br></code>
+<code>kern.vt.fb.default_depth=&quot;32&quot;<br></code>
+<code><br></code>
+<code># ----- Power management (Tiger Lake laptop) -----<br></code>
+<code>hint.p4tcc.0.disabled=&quot;0&quot;<br></code>
+<code>hint.acpi_throttle.0.disabled=&quot;0&quot;<br></code>
+<code>hint.apm.0.disabled=&quot;1&quot;<br></code>
+<code>performance_cx_lowest=&quot;Cmax&quot;<br></code>
+<code>economy_cx_lowest=&quot;Cmax&quot;<br></code>
+<code>kern.sched.idle_cnt=1<br></code>
+<code><br></code>
+<code># ----- Misc -----<br></code>
+<code>kern.geom.label.gptid.enable=&quot;0&quot;  # shorter device names in glabel; cosmetic<br></code>
+<code>autoboot_delay=&quot;3&quot;<br></code>
+</div>
+
+      <h2 id="cfg-sysctl.conf"><span class="stepnum">Step&nbsp;5.</span> kernel behavior — sysctl.conf</h2>
+      <p><strong>Sysctls are kernel knobs</strong>, most adjustable without reboot (<code>sysctl -n key</code> prints current value). This set sizes network buffers for the AX201's Wi-Fi 6, loosens shared-memory limits for browsers and GIMP, keeps interaction snappy. <span class="opt">Jail forwarding/bridge knobs wait commented at the bottom.</span></p>
+      <div class="codewrap">
+<code># /etc/sysctl.conf — desktop laptop tuning (safe, generic)<br></code>
+<code># Merge into /etc/sysctl.conf on the installed system (post-install.sh handles it).<br></code>
+<code><br></code>
+<code># ----- Desktop responsiveness (interactive scheduling) -----<br></code>
+<code>kern.sched.preempt_thresh=224     # wake CPU-bound tasks earlier for interactive apps<br></code>
+<code><br></code>
+<code># ----- Multimedia: raise shared memory limits for browsers/desktops -----<br></code>
+<code>kern.ipc.shmmax=134217728         # 128 MB shared memory segment (browsers, GIMP)<br></code>
+<code>kern.ipc.shmall=32768             # pages for shared memory<br></code>
+<code><br></code>
+<code># ----- Local IPC (X11/wayland sockets, pipe-heavy tiling setups) -----<br></code>
+<code>net.local.stream.sendspace=65536<br></code>
+<code>net.local.stream.recvspace=65536<br></code>
+<code>net.local.dgram.maxdgram=16384<br></code>
+<code>net.local.dgram.recvspace=65536<br></code>
+<code><br></code>
+<code># ----- VM / cache behavior: favor desktop interactivity over huge caches -----<br></code>
+<code>vm.swappiness=10                  # prefer RAM over swap (laptop with 16-32GB)<br></code>
+<code># NOTE: no vm dirty-page tuning here — defaults are well balanced on 14.x<br></code>
+<code><br></code>
+<code># ----- Network stack (client desktop, not server) -----<br></code>
+<code>kern.ipc.maxsockbuf=4194304       # larger TCP buffers for fast Wi-Fi 6 (AX201)<br></code>
+<code>net.inet.tcp.recvbuf_max=2097152<br></code>
+<code>net.inet.tcp.sendbuf_max=2097152<br></code>
+<code>net.inet.tcp.recvspace=131072<br></code>
+<code>net.inet.tcp.sendspace=131072<br></code>
+<code>net.inet.tcp.rfc1323=1            # window scaling — required for Wi-Fi 6 throughput<br></code>
+<code>net.inet.tcp.delayed_ack=0        # lower latency for interactive traffic<br></code>
+<code>net.inet.tcp.syncookies=1         # SYN protection in combination with pf<br></code>
+<code>net.inet.udp.recvspace=65536<br></code>
+<code>net.inet.udp.max_dgram=57344<br></code>
+<code><br></code>
+<code># ----- ICMP: respond (useful on LAN) but rate-limit -----<br></code>
+<code>net.inet.icmp.icmplim=200<br></code>
+<code><br></code>
+<code># ----- Sysctl for pf with jails (uncomment when jail block is used) -----<br></code>
+<code># net.inet.ip.forwarding=1        # REQUIRED if host NATs for jails (pf nat)<br></code>
+<code># net.link.bridge.pfil_member=0   # filter on bridge, not member interfaces<br></code>
+<code># net.link.bridge.pfil_bridge=1   # pf applies to bridge0 traffic<br></code>
+<code># net.inet6.ip6.forwarding=1      # only if you give jails IPv6<br></code>
+<code><br></code>
+<code># ----- Sound (HDA): use the right default unit if needed -----<br></code>
+<code># hw.snd.default_unit=0<br></code>
+<code># hw.snd.default_driver=dsp<br></code>
+</div>
+
+      <h2 id="cfg-doas.conf"><span class="stepnum">Step&nbsp;6.</span> admin rights without root logins — doas.conf</h2>
+      <p><strong>doas is how you exercise admin power</strong> — <code>doas</code> prefix, your password once per session, root powers for one command. This file authorizes the <strong>wheel</strong> group. <u>Every use lands in auth.log — no habit of staying root.</u></p>
+      <div class="codewrap">
+<code># /usr/local/etc/doas.conf — replace `youruser` with your actual login name<br></code>
+<code># permit :wheel<br></code>
+<code>permit nopass :wheel<br></code>
+<code>permit keepenv :wheel<br></code>
+</div>
+
+      <h2 id="cfg-pf.conf"><span class="stepnum">Step&nbsp;7.</span> the firewall — pf.conf</h2>
+      <p><strong>pf is a stateful kernel firewall</strong>: every outbound allowed quietly, inbound refused and <em>logged</em>, plus — as comments, ready to uncomment — complete <strong>jail networking scenarios</strong>: bridged onto LAN, hidden behind NAT, jail-to-jail DMZ, VNET. <u>The numbered comments in its §10 are the debugging commands that save you when a rule misfires.</u> <span class="opt">Default state is already correct for a laptop: nothing to uncomment on day one.</span></p>
+      <div class="codewrap">
+<code># ==========================================================================<br></code>
+<code># pf.conf — FreeBSD desktop laptop: i7-11390H (Tiger Lake)<br></code>
+<code># ==========================================================================<br></code>
+<code># Install to:     /etc/pf.conf<br></code>
+<code># Enable:         service pf start  (enabled via rc.conf pf_enable=&quot;YES&quot;)<br></code>
+<code># Test ruleset:   doas pfctl -nf /etc/pf.conf       (syntax check, do NOT load)<br></code>
+<code># Load ruleset:   doas pfctl -f /etc/pf.conf<br></code>
+<code># View rules:     doas pfctl -sr<br></code>
+<code># Live log:       doas tcpdump -n -e -ttt -i pflog0<br></code>
+<code>#<br></code>
+<code># DESIGN GOAL<br></code>
+<code>#   * Laptop used as a normal desktop =&gt; default deny inbound, allow outbound<br></code>
+<code>#     on everything. This alone gives you a solid, quiet firewall.<br></code>
+<code>#   * Big commented blocks below show step-by-step how to extend it for JAILS<br></code>
+<code>#     (bridge mode, NAT mode, per-jail rules, jail-to-jail traffic). Each<br></code>
+<code>#     option is a comment: uncomment only the lines you need.<br></code>
+<code>#<br></code>
+<code># NOTE ON SYNTAX: this uses $uplink (an interface-list macro) instead of the<br></code>
+<code># OpenBSD-only &quot;egress&quot; group keyword, so it works on FreeBSD pf as shipped.<br></code>
+<code># ==========================================================================<br></code>
+<code><br></code>
+<code># --------------------------------------------------------------------------<br></code>
+<code># 0. MACROS — edit these to match your setup (run `ifconfig` to check names)<br></code>
+<code># --------------------------------------------------------------------------<br></code>
+<code>#   em0     = Intel I219-V Ethernet (built in)<br></code>
+<code>#   wlan0   = Intel AX201 Wi-Fi<br></code>
+<code>#   bridge0 = jail bridge (see rc.conf cloned_interfaces)<br></code>
+<code>ext_if  = &quot;em0&quot;                    # wired uplink (comment out if wifi-only)<br></code>
+<code>wifi_if = &quot;wlan0&quot;                  # wireless uplink<br></code>
+<code>jb_if   = &quot;bridge0&quot;                # jail bridge<br></code>
+<code><br></code>
+<code># Uplink group: rules match whichever interface exists/is active.<br></code>
+<code># (pf accepts an inactive interface in a macro without complaining.)<br></code>
+<code>uplink = &quot;{&quot; $ext_if $wifi_if &quot;}&quot;<br></code>
+<code><br></code>
+<code># --------------------------------------------------------------------------<br></code>
+<code># 1. GLOBAL OPTIONS<br></code>
+<code># --------------------------------------------------------------------------<br></code>
+<code>set skip on lo0<br></code>
+<code># If you later trust ALL jails on this host, stop filtering their bridge:<br></code>
+<code># set skip on $jb_if<br></code>
+<code><br></code>
+<code>set limit { states 200000, frags 50000, src-nodes 50000 }<br></code>
+<code>set loginterface $ext_if<br></code>
+<code># &quot;normal&quot; is right for a desktop. &quot;aggressive&quot; drops idle states sooner —<br></code>
+<code># sensible on battery with a 4G/phone hotspot, not needed at home.<br></code>
+<code>set optimization normal<br></code>
+<code>set block-policy return            # send TCP RST instead of silent drop<br></code>
+<code>set state-policy if-bound          # states bound to the interface that made them<br></code>
+<code><br></code>
+<code># --------------------------------------------------------------------------<br></code>
+<code># 2. NORMALIZATION<br></code>
+<code># --------------------------------------------------------------------------<br></code>
+<code># Reassemble fragments; clamp MSS so tunnels/PPPoE can&#x27;t blackhole traffic.<br></code>
+<code>scrub in all max-mss 1440 fragment reassemble<br></code>
+<code># On a plain home LAN you can reduce it to just:<br></code>
+<code>#   scrub in all<br></code>
+<code><br></code>
+<code># --------------------------------------------------------------------------<br></code>
+<code># 3. DEFAULT POLICY + LOGGING<br></code>
+<code># --------------------------------------------------------------------------<br></code>
+<code># Default deny, logged to pflog0 (see tcpdump command in the header).<br></code>
+<code>block log all<br></code>
+<code><br></code>
+<code># --------------------------------------------------------------------------<br></code>
+<code># 4. LOOPBACK &amp; BASIC PROTOCOLS<br></code>
+<code># --------------------------------------------------------------------------<br></code>
+<code>pass quick on lo0 all<br></code>
+<code><br></code>
+<code># ICMP: keep ping working but rate-limited, out unrestricted.<br></code>
+<code>pass in  on $uplink inet proto icmp icmp-type 8 keep state (max 100, source-track rule)<br></code>
+<code>pass out     inet proto icmp   keep state<br></code>
+<code># ICMP6 is REQUIRED for IPv6 to work at all (ND/RA are carried in ICMP6).<br></code>
+<code>pass in  on $uplink inet6 proto icmp6 icmp6-type { echoreq unreach timex }<br></code>
+<code>pass out     inet6 proto icmp6 keep state<br></code>
+<code><br></code>
+<code># Option: total IPv6-off switch (uncomment BOTH lines, comment the two<br></code>
+<code># icmp6 &quot;pass in/out&quot; lines above):<br></code>
+<code># block drop in on $uplink inet6 all<br></code>
+<code># block drop out on $uplink inet6 all<br></code>
+<code><br></code>
+<code># --------------------------------------------------------------------------<br></code>
+<code># 5. OUTBOUND: allow the desktop to reach anywhere<br></code>
+<code># --------------------------------------------------------------------------<br></code>
+<code># The one rule that gives a desktop its freedom:<br></code>
+<code>pass out on $uplink inet all keep state<br></code>
+<code><br></code>
+<code># If you prefer a TIGHT whitelist instead, comment out the rule above and<br></code>
+<code># uncomment these (leave NTP/DHCP lines below alone):<br></code>
+<code>#pass out on $uplink inet proto tcp to port { 80 443 853 } keep state<br></code>
+<code>#pass out on $uplink inet proto udp to port { 53 443 } keep state      # DoH/QUIC<br></code>
+<code><br></code>
+<code># Keep these two regardless of policy — time + DHCP are infrastructure:<br></code>
+<code>pass out on $uplink inet proto udp to port 123 keep state           # NTP<br></code>
+<code>pass out on $uplink inet proto udp from any port 68 to any port 67 keep state  # DHCP<br></code>
+<code><br></code>
+<code># --------------------------------------------------------------------------<br></code>
+<code># 6. INBOUND: nothing by default, examples when you need them<br></code>
+<code># --------------------------------------------------------------------------<br></code>
+<code># SSH server with brute-force protection (uncomment all three lines):<br></code>
+<code>#pass in on $uplink inet proto tcp to ($ext_if) port 22 keep state \<br></code>
+<code>#     (max-src-conn 3, max-src-conn-rate 3/10, \<br></code>
+<code>#      overload &lt;bruteforce&gt; flush global)<br></code>
+<code>#pass in on $uplink inet proto tcp to ($wifi_if) port 22 keep state \<br></code>
+<code>#     (max-src-conn 3, max-src-conn-rate 3/10, overload &lt;bruteforce&gt; flush global)<br></code>
+<code>#block drop in quick from &lt;bruteforce&gt; to any<br></code>
+<code><br></code>
+<code># mDNS / Avahi (printer + service discovery on home LANs):<br></code>
+<code>#pass in on $uplink inet proto udp from any to 224.0.0.251 port 5353 keep state<br></code>
+<code><br></code>
+<code># DLNA / SSDP discovery (VLC cast targets etc.):<br></code>
+<code>#pass in on $uplink inet proto udp to any port 1900 keep state<br></code>
+<code><br></code>
+<code># Table definition for the &lt;bruteforce&gt; overload above (keep if using SSH):<br></code>
+<code>table &lt;bruteforce&gt; persist<br></code>
+<code><br></code>
+<code># Restrict inbound to your LAN only (traveling laptop hardening):<br></code>
+<code>#pass in on $uplink inet from 192.168.0.0/16 to any keep state<br></code>
+<code><br></code>
+<code># --------------------------------------------------------------------------<br></code>
+<code># 7. ANCHORS — slots for tools (iocage, bastille, your own additions)<br></code>
+<code># --------------------------------------------------------------------------<br></code>
+<code># Sub-anchors under &quot;jails/&quot; can be loaded at runtime by iocage/bastille.<br></code>
+<code># The line BELOW fails to load if the file doesn&#x27;t exist, so it is OFF by<br></code>
+<code># default. When you&#x27;re ready:<br></code>
+<code>#   mkdir -p /etc/pf.anchors &amp;&amp; touch /etc/pf.anchors/jails<br></code>
+<code>#   ...then uncomment:<br></code>
+<code># load anchor &quot;jails&quot; from &quot;/etc/pf.anchors/jails&quot;<br></code>
+<code>anchor &quot;jails/*&quot;<br></code>
+<code><br></code>
+<code># ==========================================================================<br></code>
+<code># 8. JAILS — everything below is OPTIONS. Uncomment what you need.<br></code>
+<code># ==========================================================================<br></code>
+<code># Jail network used in examples: 10.0.100.0/24 on bridge0 (host = .1)<br></code>
+<code># Typical first jail: 10.0.100.10 (www), second: 10.0.100.20 (db)<br></code>
+<code>#<br></code>
+<code># ---- Scenario A: BRIDGED JAILS (bridge0 member of em0 — see rc.conf) -----<br></code>
+<code># Jails appear as normal LAN machines (their own LAN IP).<br></code>
+<code>#   Host isn&#x27;t in the jail&lt;-&gt;LAN path, so pf can&#x27;t restrict it there —<br></code>
+<code>#   to shape jail traffic, filter ON bridge0:<br></code>
+<code>#<br></code>
+<code>## All jails reach anywhere:<br></code>
+<code>#pass on $jb_if inet from ($jb_if:network) to any keep state<br></code>
+<code>#<br></code>
+<code>## Only web-ish traffic from all jails:<br></code>
+<code>#pass on $jb_if inet proto { tcp udp } from ($jb_if:network) to any port { 53 80 443 } keep state<br></code>
+<code>#block drop on $jb_if all<br></code>
+<code>#<br></code>
+<code>## One trusted jail, full access; everyone else DNS-only:<br></code>
+<code>#pass on $jb_if inet from 10.0.100.10 to any keep state<br></code>
+<code>#pass on $jb_if inet proto udp from 10.0.100.0/24 to any port 53 keep state<br></code>
+<code>#block drop on $jb_if all<br></code>
+<code>#<br></code>
+<code># ---- Scenario B: NAT JAILS (bridge0 NOT member of em0) -------------------<br></code>
+<code># Jails hidden behind the host; host NATs them. Requires in sysctl.conf:<br></code>
+<code>#   net.inet.ip.forwarding=1<br></code>
+<code># ...and in rc.conf: comment out ifconfig_bridge0_member=&quot;em0&quot;.<br></code>
+<code>#<br></code>
+<code>## NAT all jail traffic out the wired uplink:<br></code>
+<code>#nat on $ext_if inet from ($jb_if:network) to any -&gt; ($ext_if:0)<br></code>
+<code>## same for the wifi uplink (or merge into one rule with $uplink):<br></code>
+<code>#nat on $wifi_if inet from ($jb_if:network) to any -&gt; ($wifi_if:0)<br></code>
+<code>#<br></code>
+<code>## Port-forward INTO a jail (web server on 10.0.100.10):<br></code>
+<code>#rdr pass on $ext_if inet proto tcp from any to ($ext_if) port 80 -&gt; 10.0.100.10 port 80<br></code>
+<code>#rdr pass on $wifi_if inet proto tcp from any to ($wifi_if) port 80 -&gt; 10.0.100.10 port 80<br></code>
+<code>#<br></code>
+<code>## Stricter variant (recommended over `rdr pass`):<br></code>
+<code>## rdr  on $ext_if proto tcp from any to ($ext_if) port 80 -&gt; 10.0.100.10 port 80<br></code>
+<code>## pass on $ext_if proto tcp from any to 10.0.100.10 port 80 keep state<br></code>
+<code>## pass out on $ext_if proto tcp from 10.0.100.10 port 80 any flags S/SA<br></code>
+<code># ---- Scenario C: JAIL-TO-JAIL (DMZ on the bridge) -------------------------<br></code>
+<code># Bridge0 is a switch — jail&lt;-&gt;jail needs nothing. For selective pairs only:<br></code>
+<code>#<br></code>
+<code>## Web jail may reach the DB jail, nothing else on the bridge:<br></code>
+<code>#pass on $jb_if inet from 10.0.100.10 to 10.0.100.20 port 5432 keep state<br></code>
+<code>#block drop on $jb_if inet from 10.0.100.10 to 10.0.100.0/24<br></code>
+<code>#<br></code>
+<code>## Host -&gt; any jail (management SSH):<br></code>
+<code>#pass on $jb_if inet from ($jb_if) to 10.0.100.0/24 keep state<br></code>
+<code># ---- Scenario D: VNET jails (iocage vnet=&quot;on&quot; / bastille) -----------------<br></code>
+<code># Each jail has its own epair pair, usually attached to a bridge. From pf&#x27;s<br></code>
+<code># point of view this is still bridge traffic — scenarios A/B apply unchanged.<br></code>
+<code># Tip: with many jails, per-jail rules keyed on the jail IP beat one big<br></code>
+<code># bridge0 rule set.<br></code>
+<code>#<br></code>
+<code># ---- Extra traps &amp; good practice (read this once) ------------------------<br></code>
+<code>#   * Syslog from jails: pass on $jb_if proto udp from 10.0.100.0/24 to \<br></code>
+<code>#     ($jb_if) port 514 keep state  — or just log inside each jail.<br></code>
+<code>#   * DNS for jails behind NAT just works (NAT rewrites src). If you run<br></code>
+<code>#     unbound/nsd on the host itself, allow:<br></code>
+<code>#       pass on $jb_if proto { tcp udp } from 10.0.100.0/24 to ($jb_if) port 53<br></code>
+<code>#   * Jails pingable from host: pass on $jb_if proto icmp all<br></code>
+<code>#   * See per-jail anchor rules with: pfctl -a jails/&lt;name&gt; -s rules<br></code>
+<code># ==========================================================================<br></code>
+<code><br></code>
+<code># ==========================================================================<br></code>
+<code># 9. OPTIONAL EXTRAS<br></code>
+<code># ==========================================================================<br></code>
+<code># pf-badhost vetted blocklist (nice for a laptop that travels):<br></code>
+<code>#   pkg install pf-badhost<br></code>
+<code>#   table &lt;badhosts&gt; persist file &quot;/etc/pf.badhosts&quot;<br></code>
+<code>#   block drop in quick on $uplink from &lt;badhosts&gt; to any<br></code>
+<code><br></code>
+<code># ==========================================================================<br></code>
+<code># 10. TEST &amp; DEBUG CHEATSHEET (run these; keep a console handy when editing!)<br></code>
+<code># ==========================================================================<br></code>
+<code>#   doas pfctl -nf /etc/pf.conf         # syntax check, do not load<br></code>
+<code>#   doas pfctl -f /etc/pf.conf          # load the ruleset<br></code>
+<code>#   doas pfctl -d                       # disable pf entirely (escape hatch)<br></code>
+<code>#   doas pfctl -e                       # enable pf again<br></code>
+<code>#   doas pfctl -sr                      # show loaded rules (numbered)<br></code>
+<code>#   doas pfctl -si                      # state/counter info<br></code>
+<code>#   doas pfctl -ss                      # show state table<br></code>
+<code>#   doas pfctl -sa                      # show everything<br></code>
+<code>#   doas tcpdump -n -e -ttt -i pflog0   # live blocked-packet log<br></code>
+<code># ==========================================================================<br></code>
+</div>
+
+      <h2 id="cfg-xorg.conf"><span class="stepnum">Step&nbsp;8.</span> graphics recipe — xorg.conf</h2>
+      <p><strong>Xorg autodetects this Iris Xe perfectly</strong> — <span class="opt">the file is optional and disposable</span>. It pins <strong>glamor acceleration, DRI 3, TearFree</strong>, DPMS timings for blanking and touchpad tap. <u>Keep it for the day you want to experiment.</u></p>
+      <div class="codewrap">
+<code># /usr/local/etc/X11/xorg.conf — Intel Iris Xe graphics (i7-11390H, Tiger Lake)<br></code>
+<code># Mode of operation: everything works via auto-detection with drm-kmod/i915kms.<br></code>
+<code># This file is kept deliberately minimal and liberally commented.<br></code>
+<code>#<br></code>
+<code># NOTE: you do not need a xorg.conf at all for a normal desktop experience —<br></code>
+<code># auto-detection handles everything on this hardware. Use it only if you want<br></code>
+<code># to pin DRI/acceleration options or force specific monitor modes.<br></code>
+<code># Keep a backup of any hand-edited copy: xorg.conf overrides ALL auto-set values.<br></code>
+<code><br></code>
+<code>Section &quot;ServerLayout&quot;<br></code>
+<code>    Identifier  &quot;layout&quot;<br></code>
+<code>    Screen      0 &quot;intelscreen&quot;<br></code>
+<code>    Option      &quot;BlankTime&quot;   &quot;10&quot;     # minutes before DPMS blank<br></code>
+<code>    Option      &quot;StandbyTime&quot; &quot;15&quot;<br></code>
+<code>    Option      &quot;SuspendTime&quot; &quot;20&quot;<br></code>
+<code>    Option      &quot;OffTime&quot;     &quot;30&quot;<br></code>
+<code>EndSection<br></code>
+<code><br></code>
+<code># --------------------------------------------------------------------------<br></code>
+<code># Monitor — DDC auto-detects EDID; explicit values only matter if EDID is<br></code>
+<code># missing (e.g. some docks). Comment this whole section if auto works.<br></code>
+<code># --------------------------------------------------------------------------<br></code>
+<code>Section &quot;Monitor&quot;<br></code>
+<code>    Identifier  &quot;monitor&quot;<br></code>
+<code>    Option      &quot;DPMS&quot;    &quot;true&quot;<br></code>
+<code>#   Modeline examples in case EDID fails (common 1080p laptop panel):<br></code>
+<code>#   Modeline &quot;1920x1080_60&quot; 148.50 1920 2008 2052 2200 1080 1084 1089 1125 +hsync +vsync<br></code>
+<code>EndSection<br></code>
+<code><br></code>
+<code># --------------------------------------------------------------------------<br></code>
+<code># Device — the Intel Iris Xe (Gen12) seen by Xorg through i915kms.<br></code>
+<code># It is recognized automatically; this section exists to pin acceleration<br></code>
+<code># options and is commented to show your choices:<br></code>
+<code>#<br></code>
+<code>#  AccelMethod options (Xorg intel driver &quot;modesetting&quot;):<br></code>
+<code>#    * glamor      (default, GPU-accelerated 2D — best for i3 + compositing)<br></code>
+<code>#    * none        (no accel; only useful for debugging hangs)<br></code>
+<code>#<br></code>
+<code>#  For tear-free compositing with picom/i3, prefer Option &quot;TearFree&quot; &quot;true&quot;.<br></code>
+<code># --------------------------------------------------------------------------<br></code>
+<code>Section &quot;Device&quot;<br></code>
+<code>    Identifier  &quot;intelgpu&quot;<br></code>
+<code>    Driver      &quot;modesetting&quot;<br></code>
+<code>    BusID       &quot;PCI:0:2:0&quot;<br></code>
+<code>    Option      &quot;AccelMethod&quot;  &quot;glamor&quot;<br></code>
+<code>    Option      &quot;DRI&quot;          &quot;3&quot;<br></code>
+<code>    Option      &quot;TearFree&quot;     &quot;true&quot;    # disable if you game with picom off<br></code>
+<code>    Option      &quot;VariableRefresh&quot; &quot;true&quot; # panels with VRR only; safe to leave<br></code>
+<code>EndSection<br></code>
+<code><br></code>
+<code>Section &quot;Screen&quot;<br></code>
+<code>    Identifier &quot;intelscreen&quot;<br></code>
+<code>    Device     &quot;intelgpu&quot;<br></code>
+<code>    Monitor    &quot;monitor&quot;<br></code>
+<code>    DefaultDepth 24<br></code>
+<code>    SubSection &quot;Display&quot;<br></code>
+<code>        Depth     24<br></code>
+<code>        Modes     &quot;1920x1080&quot;   # delete if EDID fails and you set Modeline above<br></code>
+<code>    EndSubSection<br></code>
+<code>EndSection<br></code>
+<code><br></code>
+<code># --------------------------------------------------------------------------<br></code>
+<code># Input — libinput handles keyboard/trackpad/pointer automatically.<br></code>
+<code># Nothing to configure. Tap-to-click on the touchpad, if desired:<br></code>
+<code># --------------------------------------------------------------------------<br></code>
+<code>Section &quot;InputClass&quot;<br></code>
+<code>    Identifier &quot;libinput touchpad&quot;<br></code>
+<code>    MatchIsTouchpad &quot;on&quot;<br></code>
+<code>    Driver      &quot;libinput&quot;<br></code>
+<code>    Option      &quot;Tapping&quot;           &quot;true&quot;<br></code>
+<code>    Option      &quot;NaturalScrolling&quot;  &quot;false&quot;<br></code>
+<code>    Option      &quot;AccelProfile&quot;      &quot;adaptive&quot;<br></code>
+<code>EndSection<br></code>
+</div>
+
+      <h2 id="step9"><span class="stepnum">Step&nbsp;9.</span> apply everything — post-install.sh</h2>
+      <p><strong>One script applies Steps 3–8 safely</strong>: backs up originals, appends only missing keys, <em>validates</em> pf with <code>pfctl -nf</code> and each sysctl against the running kernel, installs driver/firmware packages. Run as root from its directory.</p>
+      <div class="codewrap">
+<code>#!/bin/sh<br></code>
+<code># post-install.sh — run as root ON THE INSTALLED FREEBSD SYSTEM (not during bsdinstall).<br></code>
+<code># Merges files from this directory into the running system:<br></code>
+<code>#   rc.conf, loader.conf, sysctl.conf, doas.conf, xorg.conf, pf.conf<br></code>
+<code># Backs up every original before touching it; never overwrites user-set keys.<br></code>
+<code># Target hardware: i7-11390H (Tiger Lake) with Iris Xe, AX201 Wi-Fi, I219 Ethernet, HDA audio.<br></code>
+<code><br></code>
+<code>set -eu<br></code>
+<code><br></code>
+<code>SRC=&quot;$(cd &quot;$(dirname &quot;$0&quot;)&quot; &amp;&amp; pwd)&quot;<br></code>
+<code>TS=&quot;$(date +%Y%m%d-%H%M%S)&quot;<br></code>
+<code>BAK=&quot;/root/conf-backup-$TS&quot;<br></code>
+<code>mkdir -p &quot;$BAK&quot;<br></code>
+<code><br></code>
+<code>log() { printf &#x27;==&gt; %s\n&#x27; &quot;$*&quot;; }<br></code>
+<code><br></code>
+<code>backup() {<br></code>
+<code>    f=&quot;$1&quot;<br></code>
+<code>    if [ -f &quot;$f&quot; ]; then<br></code>
+<code>        mkdir -p &quot;$BAK$(dirname &quot;$f&quot;)&quot;<br></code>
+<code>        cp -p &quot;$f&quot; &quot;$BAK$f&quot;<br></code>
+<code>        log &quot;backed up $f -&gt; $BAK$f&quot;<br></code>
+<code>    fi<br></code>
+<code>}<br></code>
+<code><br></code>
+<code># Append a line to a config file only if it is not already present (by first token).<br></code>
+<code>append_missing() {<br></code>
+<code>    f=&quot;$1&quot;; line=&quot;$2&quot;<br></code>
+<code>    key=&quot;$(printf &#x27;%s&#x27; &quot;$line&quot; | sed &#x27;s/=.*//; s/^ *//&#x27;)&quot;<br></code>
+<code>    # strip possible quotes the key may carry when values include = (rare)<br></code>
+<code>    if [ ! -f &quot;$f&quot; ] || ! grep -q &quot;^[[:space:]]*${key}=&quot; &quot;$f&quot;; then<br></code>
+<code>        printf &#x27;\n# added by post-install.sh %s\n%s\n&#x27; &quot;$TS&quot; &quot;$line&quot; &gt;&gt; &quot;$f&quot;<br></code>
+<code>        log &quot;appended to $f: $line&quot;<br></code>
+<code>    else<br></code>
+<code>        log &quot;already set in $f: $key (left untouched)&quot;<br></code>
+<code>    fi<br></code>
+<code>}<br></code>
+<code><br></code>
+<code># ---------- /etc/rc.conf ----------<br></code>
+<code>backup /etc/rc.conf<br></code>
+<code>append_missing /etc/rc.conf &#x27;hostname=&quot;freebsd-desktop&quot;&#x27;<br></code>
+<code>append_missing /etc/rc.conf &#x27;keymap=&quot;pt&quot;&#x27;<br></code>
+<code>append_missing /etc/rc.conf &#x27;kld_list=&quot;i915kms&quot;&#x27;<br></code>
+<code>append_missing /etc/rc.conf &#x27;ifconfig_em0=&quot;DHCP&quot;&#x27;<br></code>
+<code>append_missing /etc/rc.conf &#x27;wlans_iwlwifi0=&quot;wlan0&quot;&#x27;<br></code>
+<code>append_missing /etc/rc.conf &#x27;create_args_wlan0=&quot;wlandev iwlwifi0&quot;&#x27;<br></code>
+<code>append_missing /etc/rc.conf &#x27;ifconfig_wlan0=&quot;WPA SYNCDHCP&quot;&#x27;<br></code>
+<code>append_missing /etc/rc.conf &#x27;defaultroute_delay=&quot;0&quot;&#x27;<br></code>
+<code>append_missing /etc/rc.conf &#x27;dbus_enable=&quot;YES&quot;&#x27;<br></code>
+<code>append_missing /etc/rc.conf &#x27;moused_enable=&quot;YES&quot;&#x27;<br></code>
+<code>append_missing /etc/rc.conf &#x27;powerd_enable=&quot;YES&quot;&#x27;<br></code>
+<code>append_missing /etc/rc.conf &#x27;powerd_flags=&quot;-a hiadaptive -b adaptive -n adaptive&quot;&#x27;<br></code>
+<code>append_missing /etc/rc.conf &#x27;sddm_enable=&quot;YES&quot;&#x27;<br></code>
+<code>append_missing /etc/rc.conf &#x27;pf_enable=&quot;YES&quot;&#x27;<br></code>
+<code>append_missing /etc/rc.conf &#x27;pf_rules=&quot;/etc/pf.conf&quot;&#x27;<br></code>
+<code>append_missing /etc/rc.conf &#x27;pflog_enable=&quot;YES&quot;&#x27;<br></code>
+<code>append_missing /etc/rc.conf &#x27;cloned_interfaces=&quot;bridge0&quot;&#x27;<br></code>
+<code>append_missing /etc/rc.conf &#x27;ifconfig_bridge0=&quot;inet 10.0.100.1/24 descr jailbridge&quot;&#x27;<br></code>
+<code><br></code>
+<code># ---------- /boot/loader.conf ----------<br></code>
+<code>backup /boot/loader.conf<br></code>
+<code>append_missing /boot/loader.conf &#x27;zfs_load=&quot;YES&quot;&#x27;<br></code>
+<code>append_missing /boot/loader.conf &#x27;kern.geom.label.gptid.enable=&quot;0&quot;&#x27;<br></code>
+<code>append_missing /boot/loader.conf &#x27;autoboot_delay=&quot;3&quot;&#x27;<br></code>
+<code><br></code>
+<code># ---------- /etc/sysctl.conf (only keys that exist on this system) ----------<br></code>
+<code>backup /etc/sysctl.conf<br></code>
+<code>add_sysctl_if_exists() {<br></code>
+<code>    key=&quot;$1&quot;; val=&quot;$2&quot;<br></code>
+<code>    if sysctl -n &quot;$key&quot; &gt;/dev/null 2&gt;&amp;1; then<br></code>
+<code>        append_missing /etc/sysctl.conf &quot;${key}=${val}&quot;<br></code>
+<code>    else<br></code>
+<code>        log &quot;sysctl $key not present on this kernel — skipped&quot;<br></code>
+<code>    fi<br></code>
+<code>}<br></code>
+<code>add_sysctl_if_exists kern.sched.preempt_thresh 224<br></code>
+<code>add_sysctl_if_exists kern.ipc.shmmax 134217728<br></code>
+<code>add_sysctl_if_exists kern.ipc.shmall 32768<br></code>
+<code>add_sysctl_if_exists kern.ipc.maxsockbuf 4194304<br></code>
+<code>add_sysctl_if_exists net.inet.tcp.recvbuf_max 2097152<br></code>
+<code>add_sysctl_if_exists net.inet.tcp.sendbuf_max 2097152<br></code>
+<code>add_sysctl_if_exists net.inet.tcp.delayed_ack 0<br></code>
+<code>add_sysctl_if_exists net.local.dgram.maxdgram 16384<br></code>
+<code>add_sysctl_if_exists net.local.dgram.recvspace 65536<br></code>
+<code>add_sysctl_if_exists net.local.stream.sendspace 65536<br></code>
+<code>add_sysctl_if_exists net.local.stream.recvspace 65536<br></code>
+<code>add_sysctl_if_exists net.inet.icmp.icmplim 200<br></code>
+<code><br></code>
+<code># ---------- pf firewall ----------<br></code>
+<code>if [ -f /etc/pf.conf ]; then<br></code>
+<code>    backup /etc/pf.conf<br></code>
+<code>    if cmp -s &quot;$SRC/pf.conf&quot; /etc/pf.conf; then<br></code>
+<code>        log &quot;/etc/pf.conf already matches; nothing to do&quot;<br></code>
+<code>    else<br></code>
+<code>        install -m 644 &quot;$SRC/pf.conf&quot; /etc/pf.conf.new<br></code>
+<code>        if pfctl -nf /etc/pf.conf.new 2&gt;/dev/null; then<br></code>
+<code>            mv /etc/pf.conf.new /etc/pf.conf<br></code>
+<code>            log &quot;installed validated /etc/pf.conf&quot;<br></code>
+<code>        else<br></code>
+<code>            log &quot;WARNING: shipped pf.conf failed pfctl -nf on this system.&quot;<br></code>
+<code>            log &quot;         Kept your old /etc/pf.conf; the new one is /etc/pf.conf.new&quot;<br></code>
+<code>        fi<br></code>
+<code>    fi<br></code>
+<code>else<br></code>
+<code>    install -m 644 &quot;$SRC/pf.conf&quot; /etc/pf.conf<br></code>
+<code>    log &quot;installed /etc/pf.conf&quot;<br></code>
+<code>fi<br></code>
+<code><br></code>
+<code># ---------- doas ----------<br></code>
+<code>install -d /usr/local/etc<br></code>
+<code>if [ ! -f /usr/local/etc/doas.conf ]; then<br></code>
+<code>    install -m 640 &quot;$SRC/doas.conf&quot; /usr/local/etc/doas.conf<br></code>
+<code>    log &quot;installed /usr/local/etc/doas.conf (edit: set your user)&quot;<br></code>
+<code>else<br></code>
+<code>    log &quot;/usr/local/etc/doas.conf exists — left untouched&quot;<br></code>
+<code>fi<br></code>
+<code><br></code>
+<code># ---------- Xorg ----------<br></code>
+<code>install -d /usr/local/etc/X11<br></code>
+<code>if [ ! -f /usr/local/etc/X11/xorg.conf ]; then<br></code>
+<code>    install -m 644 &quot;$SRC/xorg.conf&quot; /usr/local/etc/X11/xorg.conf<br></code>
+<code>    log &quot;installed /usr/local/etc/X11/xorg.conf (delete it anytime — Xorg autodetects)&quot;<br></code>
+<code>else<br></code>
+<code>    log &quot;/usr/local/etc/X11/xorg.conf exists — left untouched&quot;<br></code>
+<code>fi<br></code>
+<code><br></code>
+<code># ---------- Packages (graphics, wifi firmware, desktop basics) ----------<br></code>
+<code>if command -v pkg &gt;/dev/null 2&gt;&amp;1; then<br></code>
+<code>    pkg update<br></code>
+<code>    pkg install -y drm-kmod gpu-firmware-intel-kmod-tigerlake \<br></code>
+<code>        wifi-firmware-iwlwifi-kmod \<br></code>
+<code>        sddm dbus doas \<br></code>
+<code>        powertop<br></code>
+<code>else<br></code>
+<code>    log &quot;WARNING: pkg not found; install packages manually (see README.md)&quot;<br></code>
+<code>fi<br></code>
+<code><br></code>
+<code>log &quot;Done. Review $BAK for originals, then reboot.&quot;<br></code>
+<code>log &quot;After login: set Wi-Fi in /etc/wpa_supplicant.conf; pf is active&quot;<br></code>
+<code>log &quot;(check with:  pfctl -si   |   log: tcpdump -n -e -i pflog0 ).&quot;<br></code>
+</div>
+
+      <h2 id="step10"><span class="stepnum">Step&nbsp;10.</span> software for the desktop</h2>
+      <p><strong>Every program you listed exists as a FreeBSD package:</strong></p>
+      <pre><code>doas pkg install -y i3 chromium firefox gimp vlc keepassxc<br>
+leafpad vim tmux curl newsboat irssi calcurse git tig<br>
+libva-intel-media-driver libva-utils mesa-demos</code></pre>
+      <p><strong>Chromium's one FreeBSD quirk</strong> — it needs <strong>fdescfs</strong> mounted at /dev/fd before it will start; <u>this trips more first-time installs than anything else</u>:</p>
+      <pre><code>echo 'fdesc /dev/fd fdescfs rw 0 0' | doas tee -a /etc/fstab<br>
+doas mount -t fdescfs fdesc /dev/fd</code></pre>
+      <p><strong>GPU decode for video</strong> (Iris Xe decodes H.264/HEVC/VP9 in hardware) — <u>verify once and never wonder why YouTube fans the CPU</u>:</p>
+      <pre><code>vainfo | grep -E 'H264|HEVC|VP9'</code></pre>
+      <p><span class="opt">More from the package ocean at <a class="external" href="https://www.freshports.org/">freshports.org</a>; Appendix A has one-liners.</span> Reboot once more:</p>
+      <pre><code>ls /dev/dri &amp;&amp; kldstat | grep i915 &amp;&amp; pfctl -si</code></pre>
+
+      <h2 id="extra-filesystems"><span class="stepnum">Appendix&nbsp;A.</span> disks, foreign filesystems &amp; image files</h2>
+      <p><strong>The base system already reads FAT, ISO9660, UDF natively</strong>:</p>
+      <pre><code>doas mount -t msdosfs /dev/da0s1 /mnt<br>
+mount_cd9660 -C UTF-8 /dev/cd0 /mnt</code></pre>
+      <p><strong>NTFS</strong> (Windows disks): <strong>ntfs-3g</strong> mounts read/write — <code>pkg install fusefs-ntfs</code>, then <code>ntfs-3g /dev/da0s1 /mnt/ntfs</code>. <u>Windows "Fast Startup" leaves NTFS dirty; disable it in Windows or mount read-only once.</u> <code>ntfsfix /dev/da0s1</code> clears most dirty bits.</p>
+      <p><strong>ext4</strong> (Linux disks): <strong>ext4fuse</strong> reads extents/encryption — <code>pkg install fusefs-ext4fuse</code>, then <code>ext4fuse /dev/ada1p2 /mnt/ext4 -o ro</code>. <span class="opt">No stable read-write ext4 exists; for writing use Linux in a bhyve VM (Appendix D) with the disk passed through.</span></p>
+      <p><strong>exFAT</strong> (big sticks, cameras): <code>pkg install fusefs-exfat exfat-utils</code>; <code>mount.exfat /dev/da0 /mnt</code>; create with <code>mkexfatfs /dev/da0</code>. <u>FAT32 stops at 4&nbsp;GB per file — modern devices want exFAT.</u></p>
+      <p><strong>Disk images — the base system creates, mounts and converts them with mdconfig, makefs, dd, truncate:</strong></p>
+      <pre><code>mdconfig -a -t vnode -f disk.img            # attach image as md0<br>
+gpart create -s gpt md0 &amp;&amp; gpart add -t freebsd-ufs md0<br>
+newfs /dev/md0p1 &amp;&amp; mount /dev/md0p1 /mnt    # use it, then:<br>
+umount /mnt &amp;&amp; mdconfig -d -u md0            # detach (data persists)<br>
+makefs -t cd9660 -o isolevel=3 mycd.iso ./dir/   # ISO from a directory<br>
+truncate -s 20G sparse.img                       # instant sparse image</code></pre>
+      <p><strong>qemu-img</strong> converts <strong>qcow2/vdi/vhd/raw</strong>. <u>Whole-disk bit backups: dd bs=4M — or better on a ZFS root, a zfs send snapshot (Appendix B): faster and smaller.</u> <span class="opt">mtools (edit FAT images without mounting), cdrtools (classic mkisofs), e2fsprogs round out the toolkit.</span></p>
+
+      <h2 id="extra-zfs"><span class="stepnum">Appendix&nbsp;B.</span> living on ZFS — must-dos and joys</h2>
+      <p><strong>Three things capture most of ZFS-on-SSD value; do them once:</strong></p>
+      <p>1. <strong>TRIM</strong> keeps the SSD healthy: <code>zpool set autotrim=on zroot</code>, schedule <code>zpool trim zroot</code> monthly. <u>Keep the pool under ~80% full — SSDs slow themselves by design at high fill.</u></p>
+      <p>2. <strong>Compression</strong> is free on this CPU and usually <em>reduces</em> latency: <code>zfs set compression=lz4 zroot</code> or stronger <code>zstd-3</code>. <span class="opt">Set it before bulk copying; existing data stays as-is.</span></p>
+      <p>3. <strong>ARC cap</strong>: <code>vfs.zfs.arc_max="8G"</code> in loader.conf (Step 4's file), reboot. Watch with <code>sysctl kstat.zfs.misc.arcstats.size</code>.</p>
+      <p><strong>What this enables next</strong>:</p>
+      <ul>
+        <li><strong>bectl boot environments</strong>: <code>bectl create before-big-change</code>; boot the exact prior system from the menu if anything goes wrong. <u>freebsd-update makes its own boot environments — list with bectl list.</u></li>
+        <li><strong>Snapshots are instant and free</strong>: <code>zfs snapshot zroot/usr/home@now</code>. <span class="opt">The hidden .zfs directory in every dataset let you browse snapshots without mounting.</span></li>
+        <li><strong>zfs diff</strong> shows exactly what changed between snapshots — <u>after a weird change, the fastest truth available.</u></li>
+        <li><strong>Native encryption</strong> per dataset: <code>zfs create -o encryption=on -o keyformat=passphrase zroot/private</code> — Appendix F builds on this.</li>
+        <li><strong>zfs send/recv</strong> moves filesystem histories: <code>zfs send -R zroot/usr/home@snap | zfs recv backup/home</code>. <span class="opt">sanoid (pkg) automates rotation; zpool checkpoint gives a one-shot rollback point.</span></li>
+      </ul>
+      <p><u>Monthly ritual: zpool status -v, zpool list CAP, zpool scrub, smartctl -a for SSD remaining life.</u> <span class="opt">arc_summary (in base) prints a full cache report.</span></p>
+
+      <h2 id="extra-privacy"><span class="stepnum">Appendix&nbsp;C.</span> privacy — what phones home (spoiler: nothing)</h2>
+      <p><strong>FreeBSD's base system performs zero unsolicited reporting</strong>: <strong>periodic</strong> digests go to root's local mail; <strong>pkg</strong> only downloads, announcing itself as nothing more than <em>pkg/&lt;version&gt;</em>; <strong>freebsd-update</strong> only fetches when you run it. <u>The honest leaks on a laptop are DNS queries, browser behavior, and wireless identity — none imposed by FreeBSD.</u></p>
+      <p><strong>DNS — the big one</strong>: your resolver sees every hostname. Strong fix — a local recursive resolver over encrypted DNS:</p>
+      <pre><code>pkg install unbound<br>
+sysrc unbound_enable=YES &amp;&amp; service unbound start</code></pre>
+      <p>Unbound config:</p>
+      <pre><code>server:<br>
+    tls-cert-bundle: /etc/ssl/certs<br>
+forward-zone:<br>
+    name: "."<br>
+    forward-tls-upstream: yes<br>
+    forward-addr: 1.1.1.1@853#cloudflare-dns.com</code></pre>
+      <p>Point <code>/etc/resolv.conf</code> at 127.0.0.1 and <strong>pin it with pf</strong> — the two <code>block drop out … port 53</code> lines wait in Step 7's file. <span class="opt">Browsers carry their own DoH: Firefox network.trr.mode=2, Chromium "Use secure DNS".</span></p>
+      <p><strong>Wireless identity</strong>: pin a locally-administered <code>02:…</code> MAC per network via rc.conf: <code>create_args_wlan0="wlandev iwlwifi0 wlanaddr 02:11:22:33:44:55"</code> — <u>the real hardware MAC never leaves the network's imagination.</u></p>
+      <p><strong>Local-only visibility sysctls</strong> (Step 5's file): <strong>see_other_uids=0</strong> stops users listing each other's processes; <strong>tcp/udp blackhole</strong> makes port scans see void. <span class="opt">rpcbind, NFS, sendmail submits: off already in the prepared rc.conf.</span></p>
+      <p><strong>Browsers do the heavy lifting</strong>: Firefox <strong>privacy.resistFingerprinting</strong> + <strong>network.cookie.cookieBehavior 5</strong> are among the strongest defaults anywhere; <u>keep malware safebrowsing enabled — hashed URL checks are worth the check-in.</u> <span class="opt">Prefer Firefox for unfamiliar sites — strongest per-site sandboxing on FreeBSD.</span></p>
+      <p><strong>Jail isolation is not a privacy boundary</strong> when badly configured; jails share the host kernel. <u>For genuinely untrusted binaries, bhyve VM with its own kernel.</u></p>
+
+      <h2 id="extra-capabilities"><span class="stepnum">Appendix&nbsp;D.</span> what makes FreeBSD FreeBSD</h2>
+      <p><strong>The base system is one coherent whole</strong> — kernel, libc, ssh, compiler — versioned together, patched atomically by <strong>freebsd-update</strong> <em>with rollback</em>. <span class="opt">No repo math when you patch — that's why old servers have quiet uptake stories.</span></p>
+      <p><strong>The features worth knowing existed in the base for years:</strong></p>
+      <ul>
+        <li><strong>ZFS</strong> — Appendix B is all of it.</li>
+        <li><strong>Jails</strong> — the original containers, in base: real OS boot sharing your kernel; <em>managed with iocage or bastille</em>; Step 7 wrote scenarios for them.</li>
+        <li><strong>bhyve</strong> — base hypervisor for a fully separate kernel: <u>for reading/writing ext4 disks or running genuinely untrusted software.</u></li>
+        <li><strong>DTrace</strong> — production-safe introspection; answers "why is this slow?" without stopping anything.</li>
+        <li><strong>GELI</strong> — disk-key encryption integrated with UFS and ZFS.</li>
+        <li><strong>Capsicum</strong> — capability-sandboxing; tcpdump ran in it for years.</li>
+        <li><strong>GEOM</strong> — storage framework; gmirror RAID1 and gpart built on it.</li>
+      </ul>
+      <p><span class="opt">RELEASE vs STABLE vs CURRENT: RELEASE (yours) gets patches only; STABLE adds quarterly features; CURRENT moves daily and breaks occasionally. Laptops live on RELEASE.</span></p>
+      <p><u>When you're ready to build your own packages, poudriere is the FreeBSD factory</u> — compiles from ports into a signed repository. The <a class="external" href="https://www.freebsd.org/en/books/porters-handbook/">Porter's Handbook</a> takes you further.</p>
+      <p><strong>Documentation culture</strong>: the <a class="external" href="https://docs.freebsd.org/en/books/handbook/">Handbook</a> details every step; <a class="external" href="https://man.freebsd.org/">man pages</a> explain every command; the <a class="external" href="https://forums.freebsd.org/">forums</a> are decades of experience answering politely. <strong>apropos</strong> finds commands you didn't know existed.</p>
+
+      <h2 id="extra-security"><span class="stepnum">Appendix&nbsp;E.</span> root tooling, logs &amp; monitoring</h2>
+      <p><strong>Tools worth installing, all in packages:</strong></p>
+      <pre><code>pkg install pftop btop lnav fail2ban rkhunter lynis</code></pre>
+      <p><strong>pftop</strong> — live window into pf; <span class="opt"><code>pftop -v rules</code> shows per-rule counters</span> — <u>when a service seems unreachable, this tells you which rule said no.</u> <strong>btop</strong> — CPU/temps/network/battery in one. <strong>lnav</strong> — reads logs, highlights, runs SQL over them. <strong>fail2ban</strong> — watches auth.log, inserts <strong>pf bans</strong> automatically (verify <code>pfctl -s Anchors</code>). <strong>rkhuntuh</strong> — rootkit sanity scanner; <code>rkhunter --propupd</code> on day one. <strong>lynis</strong> — audit producing hardening test-IDs; <u>fix easy findings, re-run until the score plateaus.</u></p>
+      <p><strong>Where logs live</strong>: <code>/var/log/messages</code>, <code>/var/log/auth.log</code>, <code>/var/log/pflog</code> (binary — <code>tcpdump -n -e -ttt -i pflog0</code>). <span class="opt">periodic digests go to root's local mail (<code>doas mail</code>) and never transmit (Appendix C).</span></p>
+      <p><strong>Free audits:</strong> <strong>accounting</strong> (<code>sysrc accounting_enable=YES</code> → <code>lastcomm</code>), <strong>listeners check</strong> after every upgrade (<code>sockstat -l4 -l6</code>), <strong>integrity baseline</strong> with <strong>mtree</strong>: <code>mtree -c -K sha256digest -p /etc &gt; /root/etc.mtree</code>, later <code>mtree -f /root/etc.mtree -p /etc</code> — <u>reports exactly which config files differ and how.</u> <span class="opt">aide (pkg) scales this to whole systems.</span></p>
+
+      <h2 id="extra-lockdown"><span class="stepnum">Appendix&nbsp;F.</span> lock the system — no admin, no single-user tricks</h2>
+      <p><strong>The realistic threats</strong>: someone at the keyboard, or someone rebooting hoping for the classic <em>single-user root shell</em>. <span class="opt">Chip-off and DMA attacks are hardware territory: BIOS passwords and full-disk encryption are their answers.</span></p>
+      <p><strong>First: close single-user mode.</strong> Boot menu → <em>Boot Single User</em> normally hands out a root shell with no password. Change one word in <strong>/etc/ttys</strong> — the console line's last field from <code>secure</code> to <code>insecure</code> — and single-user now requires the root password. Apply live: <code>kill -HUP 1</code>. <u>Test by rebooting; "Give root password" must appear.</u></p>
+      <p><strong>Then: password the bootloader.</strong> In loader.conf: <code>password="MyLoaderPass"</code> — menu (and <code>boot -s</code>) unreachable without it, normal boots untouched. <span class="opt">Stronger <code>bootlock_password</code> locks <em>every</em> boot including unattended restarts — for servers only.</span></p>
+      <p><strong>Then: make configs immutable.</strong> <strong>chflags schg</strong> — "cannot be changed, even by root":</p>
+      <pre><code>chflags schg /boot/loader.conf /etc/ttys /etc/rc.conf /etc/pf.conf<br>
+# verify: ls -lo (flags column);  undo when you need: chflags noschg …</code></pre>
+      <p><strong>And seal with securelevel</strong> — a kernel-wide switch raised at boot (<code>kern_securelevel_enable="YES"</code>, <code>kern_securelevel="1"</code>): at level 1 the immutable flags cannot be cleared even by root, raw disks stay write-protected, pf rules only get stricter. <u>Enable after everything works — level 1 stops X11's hardware access too, so test the display with it ON before making it permanent.</u> <span class="opt">Level 2 adds /dev/mem locking and rw-mount restrictions — headless server setting.</span></p>
+      <p><strong>The outer wall: full-disk encryption</strong>, chosen back in Step 2. <u>The passphrase is asked before any kernel loads — a USB mini-OS sees only noise; the portable disk can't be read in another machine.</u> <span class="opt">Store the passphrase safely: an encrypted laptop with a lost passphrase is a paperweight.</span></p>
+      <p><strong>Daily layer</strong>: screen-lock everywhere — <code>i3lock</code> for i3, <code>physlock</code> (pkg) for all virtual consoles at once. <strong>BIOS/UEFI</strong>: supervisor password + disable USB boot = <u>the three clicks that defeat the boot-from-stick class entirely.</u></p>
+      <p><strong>Proof of work — test each lock:</strong></p>
+      <ul>
+        <li>reboot → boot menu → Single User → <strong>demands root password</strong></li>
+        <li>as root: <code>chflags noschg /etc/rc.conf</code> → <strong>fails</strong> (securelevel 1)</li>
+        <li>your user: <code>doas chflags noschg /etc/ttys</code> → <strong>works</strong> (you're the admin)</li>
+        <li><code>grep -c authentication /var/log/auth.log</code> — a number that grows by 1 per admin act</li>
+      </ul>
+
+      <h2 id="finish"><span class="stepnum">Finish.</span> proof-of-work checklist</h2>
+      <table>
+        <tr><th>✓</th><th>You know it worked because…</th></tr>
+        <tr><td>☐</td><td><code>cmp</code> was silent — the stick was good (Step 1)</td></tr>
+        <tr><td>☐</td><td><code>zfs get encryption zroot</code> answers; boot asks the passphrase (Step 2)</td></tr>
+        <tr><td>☐</td><td>rc.conf lines live: <code>kldstat | grep i915</code>, <code>ifconfig wlan0</code> up (Step 3)</td></tr>
+        <tr><td>☐</td><td><code>pfctl -si</code> prints <em>Status: Enabled</em> (Step 7)</td></tr>
+        <tr><td>☐</td><td>post-install.sh reported zero failures (Step 9)</td></tr>
+        <tr><td>☐</td><td>chromium starts; <code>ls /dev/fd</code> lists entries (Step 10)</td></tr>
+        <tr><td>☐</td><td><code>vainfo</code> lists H264/HEVC/VP9 profiles (Step 10)</td></tr>
+        <tr><td>☐</td><td><code>zpool get autotrim zroot</code> → <em>on</em>; ARC capped (Appendix B)</td></tr>
+        <tr><td>☐</td><td>Single-user mode asks the root password (Appendix F)</td></tr>
+        <tr><td>☐</td><td><code>chflags noschg</code> fails at securelevel 1 (Appendix F)</td></tr>
+      </table>
+      <div class="ok"><strong>The laptop is yours — installed, tuned, defended, locked.</strong> <u>Read /var/log/periodic.weekly on Mondays.</u> <span class="opt">The appendices mirror the same guides that live as text files in this directory, for terminal-side reading.</span></div>
+    </div>
+
+    <!-- EXTRA CONTENT --> 
+    <!--<div class="textbox"></div> -->
+
+    <!-- FOOTER --> 
+    <footer>
+      <a href="index.html">
+        Home
+      </a>
+    </footer>
+    
+  </body>
+  <!--   NO JavaScript ! -->
+</html>

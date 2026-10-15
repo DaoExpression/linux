@@ -1,0 +1,46 @@
+#	/etc/rc.conf.local — mail
+#
+#	Two daemons, two jobs:
+#	  smtpd(8)   the MTA.  Speaks SMTP to the world, does the DKIM signing
+#	             on outbound mail, and hands local mail to dovecot over LMTP.
+#	             It never writes mailboxes itself: the "maildir" action is
+#	             deliberately not used, because one process owning the
+#	             mailboxes (dovecot) is much easier to reason about.
+#	  dovecot    from packages.  IMAP(S) for clients and LMTP for smtpd.
+#
+#	    pkg_add dovecot
+#	    dovecot --version          # confirm what you installed
+#	    doveconf -n                # show the effective configuration
+
+pf=YES
+sshd_flags=""
+syslogd_flags="-u"
+ntpd_flags=""
+smtpd_flags=""
+dovecot_flags=""		# package daemon; /etc/dovecot/dovecot.conf
+
+sndiod_flags=NO
+sensorsd_flags=NO
+hotplugd_flags=NO
+identd_flags=NO
+inetd_flags=NO
+lpd_flags=NO
+spamd_flags=NO			# smtpd's own filters do the greylisting work
+xdm_flags=NO
+httpd_flags=NO			# unless you add webmail on this guest
+unwind_flags=NO
+dhcpd_flags=NO
+radvd_flags=NO
+nsd_flags=NO
+relayd_flags=NO
+iked_flags=NO
+vmd_flags=NO
+ftp-proxy_flags=NO
+snmpd_flags=""
+pflow_flags=NO
+
+# ------------------------------------------------------------------ notes
+# * acme-client is run from cron here (see the copy of /etc/crontab in this
+#   tree), not as a daemon: the certificate has to be renewed while smtpd and
+#   dovecot are holding the old one, so the renewal script is what restarts
+#   them — doing it automatically inside a "reload" hook hides the outage.

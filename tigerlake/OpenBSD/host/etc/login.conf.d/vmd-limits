@@ -1,0 +1,31 @@
+#	/etc/login.conf.d/vmd-limits
+#
+#	Drop-in login class for the vmd(8) user.  OpenBSD 7.1+ reads every file
+#	in /etc/login.conf.d/ in addition to /etc/login.conf, so this can be
+#	added without touching the shipped file.
+#
+#	Why: guest RAM is allocated by the vmd user, so its "datasize" limit
+#	must cover the sum of all guest memory.  With the default limits the
+#	daemon fails with "vm memory allocation failed" once a few guests are
+#	up.
+#
+#	After installing this file, point the vmd user at the class once:
+#	    usermod -L vmd vmd
+#	and confirm with:
+#	    su -s /bin/ksh -c 'ulimit -d' vmd
+#
+#	The class replaces the shipped "daemon" behaviour entirely, so the
+#	defaults from that class are repeated here.
+
+vmd:\
+	:datasize-cur=infinity:\
+	:datasize-max=infinity:\
+	:memoryuse-cur=infinity:\
+	:memoryuse-max=infinity:\
+	:openfiles-cur=8192:\
+	:openfiles-max=16384:\
+	:maxproc-cur=1024:\
+	:maxproc-max=2048:\
+	:stacksize-cur=16M:\
+	:coredumpsize=0:\
+	:tc=daemon:

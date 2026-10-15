@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# /usr/local/sbin/paranoid-boot-record
+#
+# Appends one line per boot to the boot record, so a boot nobody performed becomes visible in both a
+# plain file and the sealed journal (docs/07 §7).
+#
+# Called by paranoid-boot-record.service. Kept OUT of the unit file on purpose: '%' characters in
+# ExecStart are systemd specifiers (a bare %s makes the unit refuse to start), and nested
+# sh/quotes/awk inside a unit is unmaintainable. A script is testable - see --help.
+#
+# Environment overrides exist for testing:
+#   PARANOID_LOGDIR   (default /var/log/paranoid)
+#   PARANOID_LUKSDEV  (default: first crypto_LUKS device found)
+#
+# Exit codes: 0 ok, 1 could not write the record.
+
+set -uo pipefail
+
+LOGDIR="${PARANOID_LOGDIR:-/var/log/paranoid}"
+RECORD="${LOGDIR}/boots"
+
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+    sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'
+    exit 0
+fi
+
+mkdir -p "$LOGDIR" 2>/dev/null || true
+if [ ! -d "$LOGDIR" ]; then
+    echo "paranoid-boot-record: log directory ${LOGDIR} does not exist" >&2
+    exit 1
+fi
+
+boot_id="$(cat /proc/sys/kernel/random/boot_id 2>/dev/null || echo unknown)"
+kernel="$(uname -r 2>/dev/null || echo unknown)"
+now="$(date -u +%FT%TZ)"
+
+# Secure Boot state. bootctl may be absent before package install; that is not an error.
+sb="unknown"
+if command -v bootctl >/dev/null 2>&1; then
+    sb="$(bootctl status 2>/dev/null | awk -F: '/Secure Boot/{print $2; exit}' | tr -d ' ')"
+    [ -n "$sb" ] || sb="unknown"
+fi
+
+# Count active LUKS2 keyslots on the root container. A changed count means the header was modified.
+luksdev="${PARANOID_LUKSDEV:-}"
+if [ -z "$luksdev" ] && command -v blkid >/dev/null 2>&1; then
+    luksdev="$(blkid -t TYPE=crypto_LUKS -o device 2>/dev/null | head -1)"
+fi
+keyslots="n/a"
+if [ -n "$luksdev" ] && command -v cryptsetup >/dev/null 2>&1; then
+    keyslots="$(cryptsetup luksDump "$luksdev" 2>/dev/null | grep -cE '^[[:space:]]+[0-9]+: luks2')"
+fi
+
+# Lockdown mode is a one-line summary of the boot-time kernel policy.
+lockdown="$(head -1 /sys/kernel/security/lockdown 2>/dev/null | tr -d '[]' | awk '{print $1}')"
+[ -n "$lockdown" ] || lockdown="n/a"
+
+line="${now} boot=${boot_id} kernel=${kernel} sb=${sb} lockdown=${lockdown} luks=${luksdev:-none} keyslots=${keyslots}"
+
+if printf '%s\n' "$line" >> "$RECORD" 2>/dev/null; then
+    [ -n "${PARANOID_LOGDIR:-}" ] && printf '%s\n' "$line"   # echo when used as a test tool
+    exit 0
+fi
+
+# Fall back to stdout so the journal still captures it (systemd logs it with the unit name).
+printf 'paranoid-boot-record: cannot write %s, record follows:\n%s\n' "$RECORD" "$line" >&2
+exit 1

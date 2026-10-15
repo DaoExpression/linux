@@ -1,0 +1,24 @@
+# never commit keys, certs, hashes
+secrets/
+*.key
+*.pem
+*.crt
+*.pub
+!*/authorized_keys
+*_key
+*_key.pub
+ssh_host_*
+host.key
+host.pub
+
+# generated / runtime
+*.qcow2
+*.img
+*.raw
+*.iso
+logs/
+state/
+*.log
+*.db
+*.sock
+tmp/

@@ -1,0 +1,42 @@
+#	/etc/ftpusers — accounts that may never use ftpd(8)
+#
+#	Consulted by ftpd(8) for every login, including anonymous ones.  System
+#	and service accounts belong here so that an ftp login cannot become a
+#	second way into a privileged account.
+#
+#	See ftpusers(5).  One name per line, comments with #.
+
+# --- privileged accounts ------------------------------------------------------
+root
+toor
+
+# --- daemon and service accounts ---------------------------------------------
+daemon
+operator
+bin
+build
+sshd
+smmsp
+nobody
+_uucp
+_nsd
+_unwind
+_iked
+_relayd
+_dhcpleased
+_dhcp
+_slaacd
+_smtpd
+_smtpq
+_vmd
+_radiusd
+
+# --- lab service accounts -----------------------------------------------------
+monitor
+backup
+
+# ------------------------------------------------------------------ notes
+# * The "mirror" account used to publish the install sets is deliberately NOT
+#   listed: it is chrooted in /etc/ftpchroot and needs to log in.
+# * ftpd(8) also refuses any account whose shell is /sbin/nologin, so the
+#   service accounts above are belt-and-braces.

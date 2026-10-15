@@ -1,0 +1,14 @@
+# /etc/systemd/system/debsums-check.timer
+
+[Unit]
+Description=Daily debsums integrity check
+Documentation=file:///etc/systemd/system/debsums-check.service
+
+[Timer]
+OnCalendar=*-*-* 04:45:00
+RandomizedDelaySec=15m
+Persistent=true
+Unit=debsums-check.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,70 @@
+# /etc/systemd/system/paranoid-backup.service
+# Encrypted, append-only backup to a remote repository. See docs/10 §5.
+#
+# Set these up BEFORE enabling:
+#   sudo install -m 0600 /dev/null /etc/paranoid/backup.env   and put inside it:
+#       RESTIC_REPOSITORY=sftp:backup@host:/srv/restic-repo
+#       RESTIC_PASSWORD_FILE=/etc/paranoid/restic-pass
+#       RESTIC_CACHE_DIR=/var/cache/restic
+#   (the repository password file itself must be 0600 root:root, and a copy of the password must
+#    live OFFLINE - a backup nobody can decrypt is not a backup.)
+#
+# The remote must be append-only (SFTP with a restricted key, or object storage with object-lock).
+# A root-level attacker on this host must NOT be able to delete history.
+
+[Unit]
+Description=Encrypted backup (restic)
+Documentation=file:///etc/paranoid/backup.env
+After=network-online.target local-fs.target
+Wants=network-online.target
+Conflicts=paranoid-backup.timer
+
+[Service]
+Type=oneshot
+Nice=10
+IOSchedulingClass=idle
+EnvironmentFile=/etc/paranoid/backup.env
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectProc=invisible
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+NoNewPrivileges=yes
+CapabilityBoundingSet=CAP_DAC_READ_SEARCH CAP_DAC_OVERRIDE CAP_CHOWN CAP_FOWNER
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources @obsolete @mount @debug @cpu-emulation @swap @keyring
+ReadWritePaths=/var/cache/restic /var/log/paranoid
+UMask=0077
+
+ExecStartPre=/bin/mkdir -p /var/cache/restic /var/log/paranoid
+# What to back up: configuration IS the machine, plus the data and the TLS keys.
+# What NOT to back up: /var/log (ship it instead), /var/cache, /tmp, the LUKS header
+# (keep that offline - it is a decryption key, not a document).
+ExecStart=/usr/bin/restic backup \
+    /etc \
+    /srv \
+    /var/www \
+    /var/lib \
+    --exclude=/var/lib/aide --exclude=/var/lib/systemd/coredump \
+    --exclude=/var/cache --exclude=/var/tmp --exclude=/var/log \
+    --exclude-caches --one-file-system \
+    --tag automated
+ExecStartPost=/usr/bin/restic forget --keep-daily 7 --keep-weekly 5 --keep-monthly 12 --prune
+ExecStartPost=/usr/bin/restic snapshots --latest 3
+# A restore drill is required quarterly (docs/10 §5); this service only makes the backup.
+StandardOutput=append:/var/log/paranoid/backup.log
+StandardError=append:/var/log/paranoid/backup.log
+
+[Install]
+WantedBy=multi-user.target

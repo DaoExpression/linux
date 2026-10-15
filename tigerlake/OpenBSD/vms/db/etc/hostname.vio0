@@ -1,0 +1,9 @@
+#	db — PostgreSQL host, 10.10.50.12 on the srv segment.
+#
+#	Only the web guest (via the gateway's pf rule) and the monitoring guest
+#	reach this address, and neither of them on anything but 5432.
+inet 10.10.50.12 255.255.255.0 10.10.50.255
+inet6 fd00:10:10:50::12 64
+!route add default 10.10.50.1
+!route add -inet6 default fd00:10:10:50::1
+up

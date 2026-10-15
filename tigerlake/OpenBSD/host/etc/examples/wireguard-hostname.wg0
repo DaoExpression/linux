@@ -1,0 +1,27 @@
+#	/etc/examples/wireguard-hostname.wg0
+#
+#	OPTIONAL — not installed by scripts/deploy.sh (it lives in examples/ and
+#	is not named hostname.*, so netstart(8) will not pick it up).
+#
+#	iked(8) is the base-system VPN and is what pf.conf/iked.conf use.  If you
+#	prefer WireGuard for road warriors, install the package and copy this to
+#	/etc/hostname.wg0 (netstart only globs /etc/hostname.*):
+#
+#	    pkg_add wireguard-tools
+#	    awk -F= '/PrivateKey/ {print $2}' /etc/wireguard/wg0.conf > /etc/wgkey
+#	    chmod 600 /etc/wgkey
+#	    cp /etc/examples/wireguard-hostname.wg0 /etc/hostname.wg0
+#
+#	Then add the corresponding pass/NAT rules in pf.conf for interface wg0
+#	(the "vpn" macro can simply point at wg0 instead of enc0 if you drop
+#	iked) and enable the tunnel:  sh /etc/netstart wg0
+
+wgkey /etc/wgkey
+wgport 51820
+wgpeer REPLACE-WITH-CLIENT-PUBLIC-KEY \
+	wgpsk REPLACE-WITH-PRESHARED-KEY \
+	wgaip 10.10.60.10/32
+wgpeer REPLACE-WITH-LAPTOP-PUBLIC-KEY wgaip 10.10.60.11/32
+inet 10.10.60.1 255.255.255.0
+inet6 fd00:10:10:60::1 64
+up

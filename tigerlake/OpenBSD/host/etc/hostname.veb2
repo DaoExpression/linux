@@ -1,0 +1,15 @@
+#	Provisioning network for new guests (vmd(8) switch "install").
+#
+#	This is the interface the installing guests live on: dhcpd(8) hands them a
+#	lease with the boot file "auto_install" (see the install subnet in
+#	/etc/dhcpd.conf) and httpd(8) serves the sets and install.conf from
+#	10.10.99.1.  It has no physical member: only taps appear on it.
+#
+#	Once every guest is built you can shut the network down without touching
+#	the VMs:
+#	    rcctl stop dhcpd?          no — that would break USERS/GUEST
+#	    ifconfig veb2 down         (and remove the pf provisioning rules)
+#	Keeping it in place costs nothing and makes a rebuild one command.
+description "install 10.10.99.0/24 (provisioning only)"
+inet 10.10.99.1 255.255.255.0 10.10.99.255
+up

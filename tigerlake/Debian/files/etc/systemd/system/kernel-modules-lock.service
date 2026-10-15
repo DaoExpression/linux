@@ -1,0 +1,37 @@
+# /etc/systemd/system/kernel-modules-lock.service
+# TIER 3, OPT-IN, DISABLED BY DEFAULT.
+#
+# Sets kernel.modules_disabled=1 late in boot, after which no module can be loaded at all. This
+# removes the "load a rootkit module" step for an attacker who already has root - but it also
+# removes YOUR ability to load anything: USB keyboards, fwupd, libvirt, VPN drivers, all of it.
+#
+# Enable ONLY when all of the following are true:
+#   * every module you will ever need is already loaded (check: lsmod > /etc/paranoid/lsmod-baseline)
+#   * you are NOT using fwupd on this host (docs/09 §1 install-on-demand pattern)
+#   * you are NOT using rootless VMs/containers that need modules later (docs/08)
+#   * you accept that undoing this requires a reboot
+#
+# To arm it:   sudo touch /etc/paranoid/modules-lock
+# To disarm:   sudo rm /etc/paranoid/modules-lock   (then reboot)
+# It cannot be undone at runtime - that is the entire point.
+
+[Unit]
+Description=Freeze the kernel module table (Tier 3 opt-in)
+Documentation=file:///etc/paranoid/README.md
+ConditionPathExists=/etc/paranoid/modules-lock
+After=local-fs.target network-online.target systemd-udev-settle.service
+Before=multi-user.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# Fail loudly if the write is refused; silence here would be a false sense of security.
+ExecStart=/bin/sh -c 'echo 1 > /proc/sys/kernel/modules_disabled && echo "modules_disabled=1"'
+ExecStartPost=/bin/sh -c 'grep -q "^1$" /proc/sys/kernel/modules_disabled || { echo "FAILED to lock modules"; exit 1; }'
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,7 @@
+#	DMZ aggregate.  vmd(8) attaches guest tap(4) interfaces to this
+#	veb(4) via the switch "dmz" in /etc/vm.conf.
+add vlan40
+description "dmz vmd switch 10.10.40.0/24"
+inet 10.10.40.1 255.255.255.0 10.10.40.255
+inet6 fd00:10:10:40::1 64
+up

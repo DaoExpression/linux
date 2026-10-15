@@ -1,0 +1,4 @@
+#	LAN trunk — carries every 802.1Q VLAN.  No address here on purpose;
+#	each VLAN gets its own hostname.vlanNN below.  Check the real NIC name
+#	with ifconfig(8) (igc0/igc1, em0/em1, and so on) and rename this file.
+up

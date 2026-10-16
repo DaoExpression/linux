@@ -1,0 +1,14 @@
+! $OpenBSD: dot.Xdefaults,v 1.3 2014/07/10 10:22:59 jasper Exp $
+XTerm*loginShell:true
+xterm*foreground: grey60
+xterm*background: black
+xterm*faceName: Hermit
+xterm*renderFont: True
+xterm*faceSize: 14
+xterm*visualBell: False
+xterm*scrollBar: False
+xterm*geometry: 80x25+270+40
+xterm*highlightColorMode: true
+xterm*highlightColor: darkblue
+xterm*highlightTextColor: CadetBlue3
+xterm*cursorColor: olive 
